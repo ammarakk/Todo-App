@@ -1,0 +1,205 @@
+openapi: 3.0.3
+info:
+  title: Todo Chat API
+  description: AI-powered chatbot API for task management via natural language
+  version: 1.0.0
+  contact:
+    name: API Support
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+  - url: https://api.todoapp.com
+    description: Production server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /api/chat:
+    post:
+      summary: Send message to AI chatbot
+      description: |
+        Sends a user message to the AI chatbot and receives a response.
+        The AI can perform task management actions (create, list, delete, update tasks)
+        based on the user's natural language input.
+
+        Supports English and Urdu languages with automatic detection.
+      operationId: sendMessage
+      tags:
+        - Chat
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                  minLength: 1
+                  maxLength: 1000
+                  description: |
+                    User message to send to the AI.
+                    Can be in English or Urdu.
+                    Examples:
+                      - "Add a task to buy milk"
+                      - "Doodh lene ka task add karo"
+                      - "Show my tasks"
+                      - "میرے ٹاسک دکھاؤ"
+                  example: "Add a task to buy milk"
+            examples:
+              english_add_task:
+                summary: Add task (English)
+                value:
+                  message: "Add a task to buy milk"
+              urdu_add_task:
+                summary: Add task (Urdu)
+                value:
+                  message: "Doodh lene ka task add karo"
+              english_list_tasks:
+                summary: List tasks (English)
+                value:
+                  message: "Show my tasks"
+              urdu_list_tasks:
+                summary: List tasks (Urdu)
+                value:
+                  message: "میرے ٹاسک دکھاؤ"
+      responses:
+        '200':
+          description: Successful chat response
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - reply
+                  - conversation_id
+                properties:
+                  reply:
+                    type: string
+                    description: AI response in the same language as user input
+                    example: "✅ Task 'Buy milk' has been added."
+                  conversation_id:
+                    type: string
+                    format: uuid
+                    description: Unique identifier for the conversation
+                    example: "550e8400-e29b-41d4-a716-446655440000"
+                  tool_calls:
+                    type: array
+                    description: Optional list of MCP tools executed by the AI
+                    items:
+                      type: object
+                      properties:
+                        tool:
+                          type: string
+                          example: "add_task"
+                        result:
+                          type: object
+              examples:
+                english_success:
+                  summary: English response
+                  value:
+                    reply: "✅ Task 'Buy milk' has been added."
+                    conversation_id: "550e8400-e29b-41d4-a716-446655440000"
+                    tool_calls:
+                      - tool: "add_task"
+                        result:
+                          task_id: 123
+                          title: "Buy milk"
+                          status: "pending"
+                urdu_success:
+                  summary: Urdu response
+                  value:
+                    reply: "✅ 'خریداری کرنا' کام شامل ہو گیا ہے۔"
+                    conversation_id: "550e8400-e29b-41d4-a716-446655440000"
+                    tool_calls:
+                      - tool: "add_task"
+                        result:
+                          task_id: 123
+                          title: "خریداری کرنا"
+                          status: "pending"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                empty_message:
+                  summary: Empty message
+                  value:
+                    error: "Message cannot be empty"
+                    code: "VALIDATION_ERROR"
+                message_too_long:
+                  summary: Message exceeds limit
+                  value:
+                    error: "Message must be 1000 characters or less"
+                    code: "VALIDATION_ERROR"
+        '401':
+          description: Unauthorized - Invalid or expired JWT token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Invalid or expired authentication token"
+                code: "UNAUTHORIZED"
+        '500':
+          description: Internal server error - AI inference failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "AI service temporarily unavailable. Please try again."
+                code: "AI_INFERENCE_ERROR"
+        '503':
+          description: Service unavailable - Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Too many requests. Please try again later."
+                code: "RATE_LIMIT_EXCEEDED"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from Phase II authentication system
+
+  schemas:
+    Error:
+      type: object
+      required:
+        - error
+        - code
+      properties:
+        error:
+          type: string
+          description: Human-readable error message (bilingual if possible)
+        code:
+          type: string
+          enum:
+            - VALIDATION_ERROR
+            - UNAUTHORIZED
+            - NOT_FOUND
+            - PERMISSION_DENIED
+            - AI_INFERENCE_ERROR
+            - RATE_LIMIT_EXCEEDED
+            - INTERNAL_ERROR
+          description: Machine-readable error code
+
+tags:
+  - name: Chat
+    description: AI chatbot operations for task management

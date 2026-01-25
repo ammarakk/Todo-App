@@ -1,0 +1,608 @@
+# MCP Tool Schemas
+
+**Feature**: 001-ai-chatbot
+**Phase**: Phase 1 - Design & Contracts
+**Date**: 2025-01-25
+
+## Overview
+
+This document defines the Model Context Protocol (MCP) tool schemas for Phase III. All tools follow the MCP specification and include JSON Schema validation for inputs and outputs.
+
+---
+
+## Tool 1: add_task
+
+Creates a new task for the authenticated user.
+
+### Schema
+
+```yaml
+name: add_task
+description: Create a new task for the user. The task title must be 1-200 characters.
+category: task_management
+input_schema:
+  type: object
+  required:
+    - user_id
+    - title
+  properties:
+    user_id:
+      type: string
+      format: uuid
+      description: User ID (from JWT token)
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    title:
+      type: string
+      minLength: 1
+      maxLength: 200
+      description: Task title (e.g., "Buy milk", "Doodh lene")
+      example: "Buy milk"
+    description:
+      type: string
+      maxLength: 1000
+      description: Optional detailed description of the task
+      example: "Buy milk, eggs, and bread from the store"
+output_schema:
+  type: object
+  required:
+    - task_id
+    - title
+    - status
+    - created_at
+  properties:
+    task_id:
+      type: integer
+      description: Auto-generated unique task identifier
+      example: 123
+    title:
+      type: string
+      description: Task title as created
+      example: "Buy milk"
+    description:
+      type: string
+      nullable: true
+      description: Task description if provided
+      example: "Buy milk, eggs, and bread from the store"
+    status:
+      type: string
+      enum: ["pending"]
+      description: Initial task status (always pending on creation)
+      example: "pending"
+    created_at:
+      type: string
+      format: date-time
+      description: ISO 8601 timestamp of task creation
+      example: "2025-01-25T12:30:45Z"
+error_codes:
+  - code: VALIDATION_ERROR
+    message: "Title must be 1-200 characters"
+  - code: VALIDATION_ERROR
+    message: "Invalid user_id format"
+```
+
+### Example Usage
+
+**Request** (from AI agent):
+```json
+{
+  "tool": "add_task",
+  "parameters": {
+    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+    "title": "Buy milk",
+    "description": "Buy milk, eggs, and bread"
+  }
+}
+```
+
+**Success Response**:
+```json
+{
+  "task_id": 123,
+  "title": "Buy milk",
+  "description": "Buy milk, eggs, and bread",
+  "status": "pending",
+  "created_at": "2025-01-25T12:30:45Z"
+}
+```
+
+**Error Response**:
+```json
+{
+  "error": "Title cannot be empty",
+  "code": "VALIDATION_ERROR"
+}
+```
+
+---
+
+## Tool 2: list_tasks
+
+Lists all tasks for the authenticated user, optionally filtered by status.
+
+### Schema
+
+```yaml
+name: list_tasks
+description: List all tasks for the user. Can filter by status (pending, completed, or all).
+category: task_management
+input_schema:
+  type: object
+  required:
+    - user_id
+  properties:
+    user_id:
+      type: string
+      format: uuid
+      description: User ID (from JWT token)
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    status:
+      type: string
+      enum: ["pending", "completed", "all"]
+      default: "all"
+      description: Filter tasks by status (default: all)
+      example: "pending"
+output_schema:
+  type: object
+  required:
+    - tasks
+    - count
+  properties:
+    tasks:
+      type: array
+      description: List of tasks belonging to the user
+      items:
+        type: object
+        required:
+          - id
+          - title
+          - status
+          - created_at
+        properties:
+          id:
+            type: integer
+            description: Unique task identifier
+            example: 123
+          title:
+            type: string
+            description: Task title
+            example: "Buy milk"
+          description:
+            type: string
+            nullable: true
+            description: Task description if provided
+            example: "Buy milk, eggs, and bread"
+          status:
+            type: string
+            enum: ["pending", "completed"]
+            description: Task status
+            example: "pending"
+          created_at:
+            type: string
+            format: date-time
+            description: ISO 8601 timestamp of task creation
+            example: "2025-01-25T12:30:45Z"
+          completed_at:
+            type: string
+            format: date-time
+            nullable: true
+            description: ISO 8601 timestamp when task was completed
+            example: null
+    count:
+      type: integer
+      description: Total number of tasks returned
+      example: 5
+error_codes:
+  - code: VALIDATION_ERROR
+    message: "Invalid user_id format"
+```
+
+### Example Usage
+
+**Request** (from AI agent):
+```json
+{
+  "tool": "list_tasks",
+  "parameters": {
+    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+    "status": "pending"
+  }
+}
+```
+
+**Success Response**:
+```json
+{
+  "tasks": [
+    {
+      "id": 123,
+      "title": "Buy milk",
+      "description": "Buy milk, eggs, and bread",
+      "status": "pending",
+      "created_at": "2025-01-25T12:30:45Z",
+      "completed_at": null
+    },
+    {
+      "id": 124,
+      "title": "Call doctor",
+      "description": null,
+      "status": "pending",
+      "created_at": "2025-01-25T13:15:20Z",
+      "completed_at": null
+    }
+  ],
+  "count": 2
+}
+```
+
+**Empty Response** (no tasks):
+```json
+{
+  "tasks": [],
+  "count": 0
+}
+```
+
+---
+
+## Tool 3: delete_task
+
+Deletes a specific task after verifying ownership.
+
+### Schema
+
+```yaml
+name: delete_task
+description: Delete a specific task. Verifies that the task belongs to the user before deletion.
+category: task_management
+input_schema:
+  type: object
+  required:
+    - user_id
+    - task_id
+  properties:
+    user_id:
+      type: string
+      format: uuid
+      description: User ID (from JWT token)
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    task_id:
+      type: integer
+      minimum: 1
+      description: Unique task identifier to delete
+      example: 123
+output_schema:
+  type: object
+  required:
+    - success
+    - message
+  properties:
+    success:
+      type: boolean
+      description: True if task was deleted successfully
+      example: true
+    message:
+      type: string
+      description: Human-readable confirmation message
+      example: "Task 'Buy milk' has been deleted."
+    deleted_task:
+      type: object
+      description: Details of the deleted task
+      properties:
+        id:
+          type: integer
+          example: 123
+        title:
+          type: string
+          example: "Buy milk"
+error_codes:
+  - code: NOT_FOUND
+    message: "Task not found or does not belong to user"
+  - code: VALIDATION_ERROR
+    message: "Invalid user_id or task_id format"
+  - code: PERMISSION_DENIED
+    message: "Task does not belong to this user"
+```
+
+### Example Usage
+
+**Request** (from AI agent):
+```json
+{
+  "tool": "delete_task",
+  "parameters": {
+    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+    "task_id": 123
+  }
+}
+```
+
+**Success Response**:
+```json
+{
+  "success": true,
+  "message": "Task 'Buy milk' has been deleted.",
+  "deleted_task": {
+    "id": 123,
+    "title": "Buy milk"
+  }
+}
+```
+
+**Error Response** (not found):
+```json
+{
+  "error": "Task not found or does not belong to user",
+  "code": "NOT_FOUND"
+}
+```
+
+**Error Response** (permission denied):
+```json
+{
+  "error": "You do not have permission to delete this task",
+  "code": "PERMISSION_DENIED"
+}
+```
+
+---
+
+## Tool 4: update_task
+
+Updates a task status (typically to mark as completed).
+
+### Schema
+
+```yaml
+name: update_task
+description: Update a task status (e.g., mark as completed). Verifies task ownership before update.
+category: task_management
+input_schema:
+  type: object
+  required:
+    - user_id
+    - task_id
+    - status
+  properties:
+    user_id:
+      type: string
+      format: uuid
+      description: User ID (from JWT token)
+      example: "550e8400-e29b-41d4-a716-446655440000"
+    task_id:
+      type: integer
+      minimum: 1
+      description: Unique task identifier to update
+      example: 123
+    status:
+      type: string
+      enum: ["pending", "completed"]
+      description: New task status
+      example: "completed"
+    title:
+      type: string
+      minLength: 1
+      maxLength: 200
+      description: Optional new title for the task
+      example: "Buy milk and eggs"
+    description:
+      type: string
+      maxLength: 1000
+      description: Optional new description for the task
+      example: "Buy milk, eggs, and bread from the store"
+output_schema:
+  type: object
+  required:
+    - task_id
+    - status
+    - updated_at
+  properties:
+    task_id:
+      type: integer
+      description: Unique task identifier
+      example: 123
+    title:
+      type: string
+      description: Updated task title
+      example: "Buy milk and eggs"
+    description:
+      type: string
+      nullable: true
+      description: Updated task description
+      example: "Buy milk, eggs, and bread from the store"
+    status:
+      type: string
+      enum: ["pending", "completed"]
+      description: Updated task status
+      example: "completed"
+    completed_at:
+      type: string
+      format: date-time
+      nullable: true
+      description: ISO 8601 timestamp when task was completed (null if status=pending)
+      example: "2025-01-25T14:30:00Z"
+    updated_at:
+      type: string
+      format: date-time
+      description: ISO 8601 timestamp of task update
+      example: "2025-01-25T14:30:00Z"
+error_codes:
+  - code: NOT_FOUND
+    message: "Task not found or does not belong to user"
+  - code: VALIDATION_ERROR
+    message: "Invalid user_id, task_id, or status"
+  - code: PERMISSION_DENIED
+    message: "Task does not belong to this user"
+  - code: VALIDATION_ERROR
+    message: "Cannot change status from completed to pending"
+```
+
+### Example Usage
+
+**Request** (mark as completed):
+```json
+{
+  "tool": "update_task",
+  "parameters": {
+    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+    "task_id": 123,
+    "status": "completed"
+  }
+}
+```
+
+**Success Response**:
+```json
+{
+  "task_id": 123,
+  "title": "Buy milk",
+  "description": "Buy milk, eggs, and bread",
+  "status": "completed",
+  "completed_at": "2025-01-25T14:30:00Z",
+  "updated_at": "2025-01-25T14:30:00Z"
+}
+```
+
+**Request** (update title):
+```json
+{
+  "tool": "update_task",
+  "parameters": {
+    "user_id": "550e8400-e29b-41d4-a716-446655440000",
+    "task_id": 123,
+    "title": "Buy milk and eggs"
+  }
+}
+```
+
+**Error Response** (not found):
+```json
+{
+  "error": "Task not found or does not belong to user",
+  "code": "NOT_FOUND"
+}
+```
+
+**Error Response** (invalid status transition):
+```json
+{
+  "error": "Cannot change status from completed to pending",
+  "code": "VALIDATION_ERROR"
+}
+```
+
+---
+
+## Common Error Response Schema
+
+All tools return errors in the following format:
+
+```json
+{
+  "error": "<Human-readable error message>",
+  "code": "<Machine-readable error code>"
+}
+```
+
+### Error Codes
+
+| Code | Description | HTTP Status |
+|------|-------------|-------------|
+| `VALIDATION_ERROR` | Invalid input parameters | 400 |
+| `NOT_FOUND` | Task not found or doesn't belong to user | 404 |
+| `PERMISSION_DENIED` | User doesn't own the task | 403 |
+| `INTERNAL_ERROR` | Unexpected server error | 500 |
+
+---
+
+## Security Rules
+
+All tools MUST enforce the following security rules:
+
+1. **user_id Validation**:
+   - Validate `user_id` is a valid UUID format
+   - Reject requests with invalid `user_id` with `VALIDATION_ERROR`
+
+2. **Ownership Verification**:
+   - For `delete_task` and `update_task`: Verify task belongs to user
+   - Return `PERMISSION_DENIED` if user doesn't own the task
+   - Return `NOT_FOUND` if task doesn't exist (hides existence of other users' tasks)
+
+3. **SQL Injection Prevention**:
+   - Use parameterized queries (SQLModel handles this)
+   - Never concatenate user input into SQL queries
+
+4. **Logging**:
+   - Log all tool calls with: user_id, tool_name, timestamp, result
+   - Never log sensitive data (JWT tokens, passwords)
+
+---
+
+## Implementation Notes
+
+### Python MCP Server Example
+
+```python
+from mcp import Server, Tool
+from typing import Optional
+import uuid
+
+mcp_server = Server("todo-mcp-server")
+
+@mcp_server.tool()
+async def add_task(
+    user_id: str,
+    title: str,
+    description: Optional[str] = None
+) -> dict:
+    """Create a new task for the user"""
+    # Validate UUID
+    try:
+        user_uuid = uuid.UUID(user_id)
+    except ValueError:
+        return {"error": "Invalid user_id format", "code": "VALIDATION_ERROR"}
+
+    # Validate title
+    if not (1 <= len(title) <= 200):
+        return {"error": "Title must be 1-200 characters", "code": "VALIDATION_ERROR"}
+
+    # Create task in database (with user_id filter)
+    task = await create_task_in_db(user_uuid, title, description)
+
+    return {
+        "task_id": task.id,
+        "title": task.title,
+        "description": task.description,
+        "status": task.status,
+        "created_at": task.created_at.isoformat()
+    }
+```
+
+---
+
+## Testing Strategy
+
+### Unit Tests
+- Test each tool with valid inputs
+- Test each tool with invalid inputs (wrong types, out of range)
+- Test user_id validation (valid UUID, invalid UUID)
+- Test error responses match schema
+
+### Integration Tests
+- Test tool execution with real database
+- Test user isolation (user A cannot access user B's tasks)
+- Test ownership verification
+
+### Contract Tests
+- Validate all responses match JSON schemas
+- Validate all error codes are defined
+- Validate required fields are present
+
+---
+
+## Next Steps
+
+1. Implement MCP server with these tool schemas
+2. Create unit tests for each tool
+3. Create integration tests for security (user isolation)
+4. Document tool usage for AI prompt engineering
+5. Proceed to implementation (Phase 2: `/sp.tasks`)
