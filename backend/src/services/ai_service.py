@@ -18,7 +18,11 @@ class AIService:
         """Initialize AI service with Hugging Face client."""
         self.client = None
         if settings.huggingface_api_key:
-            self.client = InferenceClient(token=settings.huggingface_api_key)
+            # Use the new inference client with explicit model
+            self.client = InferenceClient(
+                model="Qwen/Qwen2.5-0.5B-Instruct",
+                token=settings.huggingface_api_key
+            )
 
     def _generate_todos_prompt(self, goal: str) -> str:
         """Generate prompt for todo creation."""
@@ -98,26 +102,40 @@ Only return JSON, no other text."""
 
         try:
             prompt = self._generate_todos_prompt(goal)
+
+            # Use text_generation method
             response = self.client.text_generation(
                 prompt,
-                model="mistralai/Mistral-7B-Instruct-v0.2",
                 max_new_tokens=500,
                 temperature=0.7,
             )
 
-            # Parse JSON response
             response_text = response.strip()
+
+            # Try to extract JSON from markdown code blocks
             if "```json" in response_text:
                 response_text = response_text.split("```json")[1].split("```")[0].strip()
             elif "```" in response_text:
                 response_text = response_text.split("```")[1].split("```")[0].strip()
 
-            result = json.loads(response_text)
+            # Try to find JSON array in the response
+            start_idx = response_text.find("[")
+            end_idx = response_text.rfind("]") + 1
 
-            return {
-                "todos": result.get("todos", []),
-                "message": f"Generated {len(result.get('todos', []))} todos for your goal"
-            }
+            if start_idx != -1 and end_idx > start_idx:
+                json_str = response_text[start_idx:end_idx]
+                todos_list = json.loads(json_str)
+                return {
+                    "todos": todos_list,
+                    "message": f"Generated {len(todos_list)} todos for your goal"
+                }
+            else:
+                # Fallback: return the raw text
+                return {
+                    "todos": [],
+                    "message": "AI generated a response but couldn't parse todos. Please try again.",
+                    "raw_response": response_text[:500]  # First 500 chars
+                }
 
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid AI response format. Please try again.") from e
@@ -166,17 +184,11 @@ Only return JSON, no other text."""
                     except:
                         pass
 
-            # Generate summary
-            prompt = self._summarize_todos_prompt(todos)
-            summary = self.client.text_generation(
-                prompt,
-                model="facebook/bart-large-cnn",
-                max_new_tokens=200,
-                temperature=0.5,
-            )
+            # Generate simple summary (without AI for now)
+            summary = f"You have {len(todos)} total todos. Breakdown: {breakdown['high_priority']} high, {breakdown['medium_priority']} medium, {breakdown['low_priority']} low priority."
 
             return {
-                "summary": summary.strip(),
+                "summary": summary,
                 "breakdown": breakdown,
                 "urgent_todos": urgent[:3]  # Top 3 urgent
             }
@@ -204,30 +216,20 @@ Only return JSON, no other text."""
             }
 
         try:
-            prompt = self._prioritize_todos_prompt(todos)
-            response = self.client.text_generation(
-                prompt,
-                model="mistralai/Mistral-7B-Instruct-v0.2",
-                max_new_tokens=500,
-                temperature=0.7,
+            # Simple prioritization without AI for now
+            prioritized = sorted(
+                todos,
+                key=lambda t: (
+                    0 if t.get("priority") == "high" else 1 if t.get("priority") == "medium" else 2,
+                    t.get("due_date") or "9999-12-31"
+                )
             )
 
-            # Parse JSON response
-            response_text = response.strip()
-            if "```json" in response_text:
-                response_text = response_text.split("```json")[1].split("```")[0].strip()
-            elif "```" in response_text:
-                response_text = response_text.split("```")[1].split("```")[0].strip()
-
-            result = json.loads(response_text)
-
             return {
-                "prioritized_todos": result.get("todos", []),
-                "message": f"Prioritized {len(result.get('todos', []))} todos"
+                "prioritized_todos": prioritized,
+                "message": f"Prioritized {len(prioritized)} todos by priority and due date"
             }
 
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid AI response format. Please try again.") from e
         except Exception as e:
             raise ValueError(f"AI service error: {str(e)}") from e
 
