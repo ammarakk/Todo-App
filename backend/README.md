@@ -1,6 +1,66 @@
+---
+title: Todo App Backend
+emoji: 📝
+colorFrom: blue
+colorTo: purple
+sdk: docker
+pinned: false
+license: mit
+---
+
 # Todo App Backend - Phase 2
 
 FastAPI backend for the Todo SaaS application with authentication, database, and AI integration.
+
+## 🚀 Hugging Face Spaces Deployment
+
+This backend is configured to deploy on Hugging Face Spaces using Docker.
+
+### Required Secrets (Set in Space Settings)
+
+Add these in your Space's **Settings > Variables** section:
+
+```bash
+# Database (Neon PostgreSQL)
+DATABASE_URL=postgresql+psycopg://user:password@ep-xxx.aws.neon.tech/neondb
+
+# JWT Authentication
+JWT_SECRET=your-super-secret-key-min-32-chars-random
+
+# Hugging Face API
+HUGGINGFACE_API_KEY=hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+# Cloudinary (for avatar uploads)
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+
+# Frontend CORS
+FRONTEND_URL=https://your-frontend-url.vercel.app
+CORS_ORIGINS=["https://your-frontend-url.vercel.app","http://localhost:3000"]
+
+# App Settings
+ENV=production
+PORT=7860
+LOG_LEVEL=info
+```
+
+### 🔑 Getting Your Hugging Face API Token
+
+1. Go to [https://huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
+2. Click **"New token"**
+3. Token name: `todo-app-backend`
+4. Type: **Read** (for accessing public models)
+5. Click **"Generate token"**
+6. Copy the token (starts with `hf_`)
+7. Add it as `HUGGINGFACE_API_KEY` in your Space's secrets
+
+### 🐳 Docker Configuration
+
+This Space uses the **Docker** SDK with the following setup:
+- Base image: `python:3.11-slim`
+- Port: `7860` (Hugging Face default)
+- Server: Uvicorn ASGI server
 
 ## Tech Stack
 
