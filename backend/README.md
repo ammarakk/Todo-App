@@ -1,9 +1,8 @@
 ---
 title: Todo App Backend
-emoji: 📝
-colorFrom: blue
-colorTo: purple
 sdk: docker
+sdk_version: python:3.11-slim
+app_file: src/main.py
 pinned: false
 license: mit
 ---
