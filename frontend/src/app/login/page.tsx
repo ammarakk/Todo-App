@@ -25,10 +25,9 @@ export default function LoginPage() {
       // Clear form on success
       setEmail('');
       setPassword('');
-      // Redirect to dashboard after successful login
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 500);
+      setIsSubmitting(false);
+      // Redirect to dashboard immediately after successful login
+      router.push('/dashboard');
     } catch (err) {
       // Error is already set in useAuth hook
       console.error('Login failed:', err);

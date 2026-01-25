@@ -70,7 +70,7 @@ class Settings(BaseSettings):
     # Application Settings
     # ========================================
     env: str = Field(default='development', description='Environment: development, staging, production')
-    port: int = Field(default=8000, description='API port')
+    port: int = Field(default=8801, description='API port')
     log_level: str = Field(default='info', description='Log level: debug, info, warning, error, critical')
 
     # ========================================
