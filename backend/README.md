@@ -1,12 +1,9 @@
 ---
 title: Todo App Backend
 sdk: docker
-pinned: false
 ---
 
-# Todo App Backend
-
-FastAPI backend for Todo SaaS application with AI features.
+FastAPI backend for Todo SaaS application with Hugging Face AI integration.
 
 ## Features
 - FastAPI REST API
