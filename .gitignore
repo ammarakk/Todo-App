@@ -1,4 +1,45 @@
-# Python
+# Phase 2 Premium Web SaaS - Comprehensive .gitignore
+# Covers: Next.js 14, FastAPI, Python, Node.js, TypeScript, Tailwind, shadcn/ui
+
+# ========================================
+# Environment Variables & Secrets
+# ========================================
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+*.pem
+*.key
+*.crt
+secrets/
+credentials/
+
+# ========================================
+# Node.js / NPM / TypeScript
+# ========================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+dist-ssr/
+build/
+.next/
+out/
+.turbo/
+.vercel/
+*.tsbuildinfo
+*.log
+logs/
+*.lnk
+
+# ========================================
+# Python / FastAPI / SQLModel
+# ========================================
 __pycache__/
 *.py[cod]
 *$py.class
@@ -16,26 +57,214 @@ parts/
 sdist/
 var/
 wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-
-# Virtual Environment
+MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.pytest_cache/
+.hypothesis/
+.venv/
 venv/
 ENV/
 env/
-.venv
+venv.bak/
+venv.stamp/
 
-# IDE
+# ========================================
+# Alembic (Database Migrations)
+# ========================================
+alembic/versions/*.pyc
+alembic/versions/__pycache__/
+
+# ========================================
+# IDE & Editor Files
+# ========================================
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-
-# OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+*.sublime-project
+*.sublime-workspace
+.history/
+*.fdb_cdblock/
+.project
+.classpath
+.settings/
+*.launch
+.factorypath
+.metadata.gradle
+.gradle/
+*.iml
+*.ipr
+*.iws
+.project.settings
+.settings/
+.loadpath
+.recommenders
+.springBeans
+.sts4-cache
+.idea_modules/
+.vs/
+*.code-workspace
 
-# Project specific
+# ========================================
+# Testing & Coverage
+# ========================================
+coverage/
+*.lcov
+.nyc_output/
+playwright-report/
+test-results/
+*.test.tsx.snap
+*.mock.tsx
+
+# ========================================
+# OS Generated Files
+# ========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ========================================
+# Temporary Files
+# ========================================
+*.tmp
+*.temp
+*.cache
+*.bak
+*.backup
+*.swp
+*.swo
+*~.nib
+*.sql
+*.sqlite
+*.db
+
+# ========================================
+# Build & Distribution Artifacts
+# ========================================
+*.tgz
+*.tar.gz
+*.rar
+*.zip
+*.7z
+*.exe
+*.dll
+*.dylib
+*.bin
+*.obj/
+out/
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# ========================================
+# Cloud / Deployment
+# ========================================
+.vercel
+.netlify
+.firebase/
+amplify/
+#debug.log
 *.log
+
+# ========================================
+# Package Manager Lock Files (Optional)
+# ========================================
+# Uncomment if you want to ignore lock files
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+# poetry.lock
+# Pipfile.lock
+
+# ========================================
+# Docker
+# ========================================
+*.dockerfile
+docker-compose.override.yml
+
+# ========================================
+# Database Files
+# ========================================
+*.db
+*.sqlite
+*.sqlite3
+*.db3
+*.psql
+*.sql
+*.sqlitedb
+
+# ========================================
+# Cloudinary / Image Uploads (if local storage)
+# ========================================
+uploads/
+public/uploads/
+static/uploads/
+temp/
+
+# ========================================
+# AI / ML Model Files
+# ========================================
+*.pkl
+*.h5
+*.hdf5
+*.pb
+*.onnx
+*.ckpt
+*.pt
+*.pth
+
+# ========================================
+# Logs & Debugging
+# ========================================
+*.log
+logs/
+*.debug
+debug.log
+error.log
+access.log
+server.log
+application.log
+
+# ========================================
+# Misc
+# ========================================
+.site/
+.sass-cache/
+.jekyll-cache/
+.jekyll-metadata
+.jekyll-server-cache
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+nul

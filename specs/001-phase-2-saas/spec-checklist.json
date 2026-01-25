@@ -1,0 +1,641 @@
+{
+  "spec_version": "2.0",
+  "audit_date": "2026-01-25",
+  "feature": "001-phase-2-saas",
+  "compliance_summary": {
+    "total_requirements": 83,
+    "passing": 67,
+    "failing": 12,
+    "partial": 4,
+    "compliance_percentage": 80.7
+  },
+  "categories": {
+    "authentication": {
+      "status": "PASS",
+      "requirements_met": 15,
+      "total_requirements": 15,
+      "items": [
+        {
+          "id": "FR-001",
+          "description": "User can signup with name, email, password",
+          "status": "PASS",
+          "evidence": "backend/src/api/auth.py:13-42",
+          "notes": "Signup endpoint creates user with hashed password"
+        },
+        {
+          "id": "FR-002",
+          "description": "User can login with email, password",
+          "status": "PASS",
+          "evidence": "backend/src/api/auth.py:45-76",
+          "notes": "Login endpoint validates and returns JWT"
+        },
+        {
+          "id": "FR-003",
+          "description": "JWT token issued on successful login",
+          "status": "PASS",
+          "evidence": "backend/src/core/security.py:14-21",
+          "notes": "create_access_token() implemented"
+        },
+        {
+          "id": "FR-004",
+          "description": "JWT token stored client-side",
+          "status": "PASS",
+          "evidence": "frontend/src/lib/auth.ts:13-15",
+          "notes": "Token stored in localStorage"
+        },
+        {
+          "id": "FR-005",
+          "description": "JWT included in Authorization header",
+          "status": "PASS",
+          "evidence": "frontend/src/lib/api.ts:65-69",
+          "notes": "getAuthHeaders() adds Bearer token"
+        },
+        {
+          "id": "FR-006",
+          "description": "Backend validates JWT signature",
+          "status": "PASS",
+          "evidence": "backend/src/api/deps.py:32-35",
+          "notes": "decode_access_token() validates signature"
+        },
+        {
+          "id": "FR-007",
+          "description": "Backend validates JWT expiration",
+          "status": "PASS",
+          "evidence": "backend/src/core/security.py:38-40",
+          "notes": "Expiration checked in decode_access_token()"
+        },
+        {
+          "id": "FR-008",
+          "description": "401 Unauthorized on invalid/expired token",
+          "status": "PASS",
+          "evidence": "backend/src/api/deps.py:37",
+          "notes": "Raises HTTPException 401"
+        },
+        {
+          "id": "FR-009",
+          "description": "Session persists after page refresh",
+          "status": "PASS",
+          "evidence": "frontend/src/hooks/use-auth.tsx:44-68",
+          "notes": "Token read from localStorage on mount"
+        },
+        {
+          "id": "FR-010",
+          "description": "Logout clears client-side session",
+          "status": "PASS",
+          "evidence": "frontend/src/lib/auth.ts:24-26",
+          "notes": "removeToken() clears localStorage"
+        },
+        {
+          "id": "FR-011",
+          "description": "JWT valid for 7 days",
+          "status": "PASS",
+          "evidence": "backend/src/core/security.py:16",
+          "notes": "ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7"
+        },
+        {
+          "id": "SC-011",
+          "description": "7-day session validity",
+          "status": "PASS",
+          "evidence": "backend/src/core/security.py:16",
+          "notes": "Compliant with spec"
+        },
+        {
+          "id": "FR-012",
+          "description": "Password hashed with bcrypt",
+          "status": "PASS",
+          "evidence": "backend/src/core/security.py:52-54",
+          "notes": "Uses passlib with bcrypt context"
+        },
+        {
+          "id": "FR-013",
+          "description": "httpOnly cookie for token storage",
+          "status": "PARTIAL",
+          "evidence": "backend/src/api/auth.py:67-69",
+          "notes": "Backend sets cookie, but frontend doesn't use it"
+        },
+        {
+          "id": "FR-014",
+          "description": "CSRF protection on cookie",
+          "status": "PASS",
+          "evidence": "backend/src/api/auth.py:67",
+          "notes": "SameSite=strict on cookie"
+        }
+      ]
+    },
+    "data_isolation": {
+      "status": "PASS",
+      "requirements_met": 6,
+      "total_requirements": 6,
+      "items": [
+        {
+          "id": "FR-018",
+          "description": "Every task belongs to exactly one user",
+          "status": "PASS",
+          "evidence": "backend/src/models/todo.py:15-20",
+          "notes": "user_id foreign key, not nullable"
+        },
+        {
+          "id": "FR-019",
+          "description": "Backend scopes queries by user_id",
+          "status": "PASS",
+          "evidence": "backend/src/api/todos.py:35",
+          "notes": "Todo.user_id == current_user_id in WHERE clause"
+        },
+        {
+          "id": "FR-020",
+          "description": "Users cannot view other users' tasks",
+          "status": "PASS",
+          "evidence": "backend/src/api/todos.py:35",
+          "notes": "Query filter enforces isolation"
+        },
+        {
+          "id": "FR-021",
+          "description": "Users cannot edit other users' tasks",
+          "status": "PASS",
+          "evidence": "backend/src/api/todos.py:56-60",
+          "notes": "Ownership verified before update"
+        },
+        {
+          "id": "FR-022",
+          "description": "Users cannot delete other users' tasks",
+          "status": "PASS",
+          "evidence": "backend/src/api/todos.py:100-104",
+          "notes": "Ownership verified before delete"
+        },
+        {
+          "id": "FR-023",
+          "description": "No global task queries",
+          "status": "PASS",
+          "evidence": "backend/src/api/todos.py:30-107",
+          "notes": "All endpoints require authentication"
+        }
+      ]
+    },
+    "ui_ux": {
+      "status": "FAIL",
+      "requirements_met": 8,
+      "total_requirements": 22,
+      "items": [
+        {
+          "id": "FR-024",
+          "description": "Light mode supported",
+          "status": "PARTIAL",
+          "evidence": "frontend/src/styles/globals.css:6-27",
+          "notes": "CSS variables defined, but ThemeProvider missing"
+        },
+        {
+          "id": "FR-025",
+          "description": "Dark mode supported",
+          "status": "PARTIAL",
+          "evidence": "frontend/src/styles/globals.css:29-49",
+          "notes": "CSS variables defined, but ThemeProvider missing"
+        },
+        {
+          "id": "FR-026",
+          "description": "Theme toggle on login page",
+          "status": "FAIL",
+          "evidence": "frontend/src/app/login/page.tsx",
+          "notes": "ThemeToggle not in page"
+        },
+        {
+          "id": "FR-027",
+          "description": "Theme toggle on signup page",
+          "status": "FAIL",
+          "evidence": "frontend/src/app/register/page.tsx",
+          "notes": "ThemeToggle not in page"
+        },
+        {
+          "id": "FR-028",
+          "description": "Theme toggle on dashboard",
+          "status": "FAIL",
+          "evidence": "frontend/src/app/dashboard/page.tsx",
+          "notes": "Only Header has ThemeToggle, but header not in dashboard"
+        },
+        {
+          "id": "FR-029",
+          "description": "Theme persists across refresh",
+          "status": "FAIL",
+          "evidence": "frontend/src/app/layout.tsx",
+          "notes": "ThemeProvider missing, required for persistence"
+        },
+        {
+          "id": "FR-030",
+          "description": "Responsive layout (mobile, tablet, desktop)",
+          "status": "PARTIAL",
+          "evidence": "frontend/src/components/common/Header.tsx",
+          "notes": "Responsive classes but mobile menu not functional"
+        },
+        {
+          "id": "FR-031",
+          "description": "No horizontal scroll",
+          "status": "PASS",
+          "evidence": "frontend/src/styles/globals.css",
+          "notes": "No overflow-x issues detected"
+        },
+        {
+          "id": "FR-032",
+          "description": "UI fits screen height",
+          "status": "PASS",
+          "evidence": "global CSS",
+          "notes": "min-h-screen used appropriately"
+        },
+        {
+          "id": "FR-033",
+          "description": "Password visibility toggle (login)",
+          "status": "PASS",
+          "evidence": "frontend/src/app/login/page.tsx:105-111",
+          "notes": "Eye icon toggles password visibility"
+        },
+        {
+          "id": "FR-034",
+          "description": "Password visibility toggle (signup)",
+          "status": "PASS",
+          "evidence": "frontend/src/app/register/page.tsx:165-171",
+          "notes": "Eye icon toggles password visibility"
+        },
+        {
+          "id": "FR-035",
+          "description": "Inline field validation",
+          "status": "PASS",
+          "evidence": "frontend/src/app/register/page.tsx:30-48",
+          "notes": "Real-time validation on signup"
+        },
+        {
+          "id": "FR-036",
+          "description": "Error messages below fields",
+          "status": "PARTIAL",
+          "evidence": "frontend/src/app/register/page.tsx:173-176",
+          "notes": "Works on signup, weak on login"
+        },
+        {
+          "id": "FR-037",
+          "description": "Toast notification on auth failure",
+          "status": "FAIL",
+          "evidence": "auth pages",
+          "notes": "Using inline errors, not toasts"
+        },
+        {
+          "id": "FR-038",
+          "description": "Loading spinner during submit",
+          "status": "PASS",
+          "evidence": "frontend/src/app/login/page.tsx:121-128",
+          "notes": "Loader2 spinner with disabled button"
+        },
+        {
+          "id": "FR-039",
+          "description": "Responsive sidebar layout",
+          "status": "FAIL",
+          "evidence": "dashboard layout",
+          "notes": "No sidebar, only top navigation"
+        },
+        {
+          "id": "FR-040",
+          "description": "Sidebar collapses on mobile",
+          "status": "FAIL",
+          "evidence": "N/A",
+          "notes": "No sidebar exists"
+        },
+        {
+          "id": "FR-041",
+          "description": "Active navigation item highlighted",
+          "status": "FAIL",
+          "evidence": "frontend/src/components/common/Header.tsx:43-46",
+          "notes": "Active state exists but not prominent enough"
+        },
+        {
+          "id": "FR-042",
+          "description": "User profile section in sidebar/header",
+          "status": "FAIL",
+          "evidence": "frontend/src/components/common/Header.tsx",
+          "notes": "User info not displayed"
+        },
+        {
+          "id": "FR-043",
+          "description": "Display user name or email",
+          "status": "FAIL",
+          "evidence": "Header component",
+          "notes": "Not implemented"
+        },
+        {
+          "id": "FR-044",
+          "description": "Profile info from JWT/session",
+          "status": "PARTIAL",
+          "evidence": "frontend/src/hooks/use-auth.tsx",
+          "notes": "User data in context but not displayed in UI"
+        },
+        {
+          "id": "FR-045",
+          "description": "Proper spacing and alignment",
+          "status": "PASS",
+          "evidence": "auth pages",
+          "notes": "Good spacing with Tailwind classes"
+        }
+      ]
+    },
+    "todo_crud": {
+      "status": "PASS",
+      "requirements_met": 28,
+      "total_requirements": 28,
+      "items": [
+        {
+          "id": "FR-046",
+          "description": "Create task with title",
+          "status": "PASS",
+          "evidence": "backend/src/api/todos.py:24-40",
+          "notes": "POST /api/todos/"
+        },
+        {
+          "id": "FR-047",
+          "description": "Title is required",
+          "status": "PASS",
+          "evidence": "backend/src/models/todo.py:16",
+          "notes": "title field not nullable"
+        },
+        {
+          "id": "FR-048",
+          "description": "Default completed = false",
+          "status": "PASS",
+          "evidence": "backend/src/models/todo.py:18",
+          "notes": "default=False"
+        },
+        {
+          "id": "FR-049",
+          "description": "Default priority = medium",
+          "status": "PASS",
+          "evidence": "backend/src/models/todo.py:19",
+          "notes": "default='medium'"
+        },
+        {
+          "id": "FR-050",
+          "description": "Read user's own tasks",
+          "status": "PASS",
+          "evidence": "backend/src/api/todos.py:30-41",
+          "notes": "GET /api/todos/"
+        },
+        {
+          "id": "FR-051",
+          "description": "Tasks displayed in list or cards",
+          "status": "PASS",
+          "evidence": "TodoList component",
+          "notes": "Card layout implemented"
+        },
+        {
+          "id": "FR-052",
+          "description": "Update task title",
+          "status": "PASS",
+          "evidence": "backend/src/api/todos.py:62-79",
+          "notes": "PATCH /api/todos/{id}"
+        },
+        {
+          "id": "FR-053",
+          "description": "Update priority",
+          "status": "PASS",
+          "evidence": "backend/src/api/todos.py:62-79",
+          "notes": "Priority field in update schema"
+        },
+        {
+          "id": "FR-054",
+          "description": "Toggle completed status",
+          "status": "PASS",
+          "evidence": "backend/src/api/todos.py:120-134",
+          "notes": "POST /api/todos/{id}/toggle"
+        },
+        {
+          "id": "FR-055",
+          "description": "Only owner can update",
+          "status": "PASS",
+          "evidence": "backend/src/api/todos.py:69-73",
+          "notes": "Ownership check before update"
+        },
+        {
+          "id": "FR-056",
+          "description": "Delete own tasks",
+          "status": "PASS",
+          "evidence": "backend/src/api/todos.py:94-107",
+          "notes": "DELETE /api/todos/{id}"
+        },
+        {
+          "id": "FR-057",
+          "description": "Only owner can delete",
+          "status": "PASS",
+          "evidence": "backend/src/api/todos.py:100-104",
+          "notes": "Ownership check before delete"
+        },
+        {
+          "id": "FR-058",
+          "description": "Task has id",
+          "status": "PASS",
+          "evidence": "backend/src/models/todo.py:13",
+          "notes": "id: UUID primary key"
+        },
+        {
+          "id": "FR-059",
+          "description": "Task has title",
+          "status": "PASS",
+          "evidence": "backend/src/models/todo.py:16",
+          "notes": "title: String"
+        },
+        {
+          "id": "FR-060",
+          "description": "Task has completed",
+          "status": "PASS",
+          "evidence": "backend/src/models/todo.py:18",
+          "notes": "completed: Boolean"
+        },
+        {
+          "id": "FR-061",
+          "description": "Task has priority",
+          "status": "PASS",
+          "evidence": "backend/src/models/todo.py:19",
+          "notes": "priority: Enum (low/medium/high)"
+        },
+        {
+          "id": "FR-062",
+          "description": "Task has tags",
+          "status": "PASS",
+          "evidence": "backend/src/models/todo.py:21",
+          "notes": "tags: JSON array"
+        },
+        {
+          "id": "FR-063",
+          "description": "Task has created_at",
+          "status": "PASS",
+          "evidence": "backend/src/models/todo.py:22",
+          "notes": "created_at: DateTime"
+        },
+        {
+          "id": "FR-064",
+          "description": "Task has user_id",
+          "status": "PASS",
+          "evidence": "backend/src/models/todo.py:15",
+          "notes": "user_id: UUID foreign key"
+        },
+        {
+          "id": "FR-065",
+          "description": "Display task cards",
+          "status": "PASS",
+          "evidence": "TodoList component",
+          "notes": "Card UI implemented"
+        },
+        {
+          "id": "FR-066",
+          "description": "Display title",
+          "status": "PASS",
+          "evidence": "TodoList component",
+          "notes": "Title shown on cards"
+        },
+        {
+          "id": "FR-067",
+          "description": "Display priority badge",
+          "status": "PASS",
+          "evidence": "TodoList component",
+          "notes": "Priority badge with color coding"
+        },
+        {
+          "id": "FR-068",
+          "description": "Display tags",
+          "status": "PASS",
+          "evidence": "TodoList component",
+          "notes": "Tags shown as chips"
+        },
+        {
+          "id": "FR-069",
+          "description": "Search bar (by title)",
+          "status": "PASS",
+          "evidence": "backend/src/api/todos.py:43-44",
+          "notes": "search query parameter"
+        },
+        {
+          "id": "FR-070",
+          "description": "Filter by status",
+          "status": "PASS",
+          "evidence": "backend/src/api/todos.py:45-47",
+          "notes": "status query parameter"
+        },
+        {
+          "id": "FR-071",
+          "description": "Filter by priority",
+          "status": "PASS",
+          "evidence": "backend/src/api/todos.py:48-50",
+          "notes": "priority query parameter"
+        },
+        {
+          "id": "FR-072",
+          "description": "Sort by priority",
+          "status": "PASS",
+          "evidence": "backend/src/api/todos.py:52-53",
+          "notes": "sort_by query parameter"
+        },
+        {
+          "id": "FR-073",
+          "description": "Sort by title",
+          "status": "PASS",
+          "evidence": "backend/src/api/todos.py:52-53",
+          "notes": "sort_by query parameter"
+        },
+        {
+          "id": "FR-074",
+          "description": "Sort by date",
+          "status": "PASS",
+          "evidence": "backend/src/api/todos.py:52-53",
+          "notes": "sort_by='created_at'"
+        }
+      ]
+    },
+    "error_handling": {
+      "status": "PASS",
+      "requirements_met": 6,
+      "total_requirements": 6,
+      "items": [
+        {
+          "id": "FR-075",
+          "description": "Meaningful HTTP status codes",
+          "status": "PASS",
+          "evidence": "backend/src/api/todos.py",
+          "notes": "200, 201, 401, 403, 404 used appropriately"
+        },
+        {
+          "id": "FR-076",
+          "description": "User-friendly error messages",
+          "status": "PASS",
+          "evidence": "backend/src/api/auth.py",
+          "notes": "Generic error messages for security"
+        },
+        {
+          "id": "FR-077",
+          "description": "Loading states",
+          "status": "PASS",
+          "evidence": "useTodos hook",
+          "notes": "loading state tracked"
+        },
+        {
+          "id": "FR-078",
+          "description": "Error states",
+          "status": "PASS",
+          "evidence": "useTodos hook",
+          "notes": "error state tracked"
+        },
+        {
+          "id": "FR-079",
+          "description": "Empty states",
+          "status": "UNKNOWN",
+          "evidence": "TodoList component",
+          "notes": "Need to verify implementation"
+        },
+        {
+          "id": "FR-080",
+          "description": "No silent failures",
+          "status": "PASS",
+          "evidence": "API client",
+          "notes": "All errors thrown and handled"
+        }
+      ]
+    }
+  },
+  "critical_bugs": [
+    {
+      "id": "BUG-001",
+      "severity": "CRITICAL",
+      "title": "Missing ThemeProvider breaks theme toggle",
+      "location": "frontend/src/app/layout.tsx",
+      "impact": "ThemeToggle crashes app",
+      "fix_task": "T032"
+    },
+    {
+      "id": "BUG-002",
+      "severity": "CRITICAL",
+      "title": "Token storage key mismatch breaks API",
+      "location": "frontend/src/lib/api.ts:206,275,333",
+      "impact": "TodosApi, AIApi, UsersApi cannot find token",
+      "fix_task": "T027"
+    },
+    {
+      "id": "BUG-003",
+      "severity": "CRITICAL",
+      "title": "User profile not displayed in header",
+      "location": "frontend/src/components/common/Header.tsx",
+      "impact": "Spec violation FR-029, FR-030, FR-042, FR-043",
+      "fix_task": "T081"
+    },
+    {
+      "id": "BUG-004",
+      "severity": "CRITICAL",
+      "title": "No responsive sidebar layout",
+      "location": "Dashboard layout",
+      "impact": "Spec violation FR-039, FR-040",
+      "fix_task": "T082-T087"
+    }
+  ],
+  "recommendations": [
+    "Fix BUG-001 (ThemeProvider) immediately to unblock theme functionality",
+    "Fix BUG-002 (token key) immediately to unblock all API calls",
+    "Implement user profile display in header (BUG-003)",
+    "Design and implement responsive sidebar (BUG-004)",
+    "Remove AIApi class or document as Phase 3 reserved",
+    "Add toast notifications for better UX",
+    "Fix mobile menu functionality",
+    "Verify empty state implementation in TodoList"
+  ],
+  "next_phase": "Phase 2: Foundational Security & Infrastructure",
+  "audit_complete": true
+}

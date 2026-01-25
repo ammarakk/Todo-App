@@ -1,0 +1,1330 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Todo App API",
+    "description": "Premium Web SaaS API for Phase 2 Todo Application with Authentication, Todo Management, User Profiles, and AI Features",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000",
+      "description": "Local development server"
+    },
+    {
+      "url": "https://todo-app-api.onrender.com",
+      "description": "Production server"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "description": "Check if API is running",
+        "operationId": "health_check",
+        "tags": ["Health"],
+        "responses": {
+          "200": {
+            "description": "API is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "healthy"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/signup": {
+      "post": {
+        "summary": "User registration",
+        "description": "Create a new user account",
+        "operationId": "signup",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully",
+            "headers": {
+              "Set-Cookie": {
+                "description": "JWT token set as httpOnly cookie",
+                "schema": {
+                  "type": "string",
+                  "example": "token=<jwt_token>; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800"
+                }
+              },
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/AuthResponse"
+                  }
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/BadRequest"
+            },
+            "409": {
+              "$ref": "#/components/responses/Conflict"
+            },
+            "422": {
+              "$ref": "#/components/responses/ValidationError"
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "User login",
+        "description": "Authenticate user and receive JWT token",
+        "operationId": "login",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "headers": {
+              "Set-Cookie": {
+                "description": "JWT token set as httpOnly cookie",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "401": {
+              "$ref": "#/components/responses/Unauthorized"
+            },
+            "422": {
+              "$ref": "#/components/responses/ValidationError"
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "User logout",
+        "description": "Invalidate JWT token and clear cookie",
+        "operationId": "logout",
+        "tags": ["Authentication"],
+        "security": [{"BearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Logout successful",
+            "headers": {
+              "Set-Cookie": {
+                "description": "Clear token cookie",
+                "schema": {
+                  "type": "string",
+                  "example": "token=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            },
+            "401": {
+              "$ref": "#/components/responses/Unauthorized"
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "summary": "Get current user",
+        "description": "Retrieve authenticated user's profile",
+        "operationId": "get_current_user",
+        "tags": ["Authentication"],
+        "security": [{"BearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "User profile retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            },
+            "401": {
+              "$ref": "#/components/responses/Unauthorized"
+            }
+          }
+        }
+      }
+    },
+    "/todos": {
+      "get": {
+        "summary": "List todos",
+        "description": "Get user's todos with filtering, searching, and sorting",
+        "operationId": "list_todos",
+        "tags": ["Todos"],
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/SkipParam"
+          },
+          {
+            "$ref": "#/components/parameters/LimitParam"
+          },
+          {
+            "$ref": "#/components/parameters/StatusFilter"
+          },
+          {
+            "$ref": "#/components/parameters/PriorityFilter"
+          },
+          {
+            "$ref": "#/components/parameters/SearchParam"
+          },
+          {
+            "$ref": "#/components/parameters/SortByParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Todos retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoListResponse"
+                }
+              }
+            },
+            "401": {
+              "$ref": "#/components/responses/Unauthorized"
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create todo",
+        "description": "Create a new todo for authenticated user",
+        "operationId": "create_todo",
+        "tags": ["Todos"],
+        "security": [{"BearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TodoCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Todo created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoResponse"
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/BadRequest"
+            },
+            "401": {
+              "$ref": "#/components/responses/Unauthorized"
+            },
+            "422": {
+              "$ref": "#/components/responses/ValidationError"
+            }
+          }
+        }
+      }
+    },
+    "/todos/{id}": {
+      "get": {
+        "summary": "Get todo by ID",
+        "description": "Retrieve a specific todo",
+        "operationId": "get_todo",
+        "tags": ["Todos"],
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TodoIdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Todo retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoResponse"
+                }
+              }
+            },
+            "401": {
+              "$ref": "#/components/responses/Unauthorized"
+            },
+            "403": {
+              "$ref": "#/components/responses/Forbidden"
+            },
+            "404": {
+              "$ref": "#/components/responses/NotFound"
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update todo",
+        "description": "Update a todo's details",
+        "operationId": "update_todo",
+        "tags": ["Todos"],
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TodoIdParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TodoUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Todo updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoResponse"
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/BadRequest"
+            },
+            "401": {
+              "$ref": "#/components/responses/Unauthorized"
+            },
+            "403": {
+              "$ref": "#/components/responses/Forbidden"
+            },
+            "404": {
+              "$ref": "#/components/responses/NotFound"
+            },
+            "422": {
+              "$ref": "#/components/responses/ValidationError"
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete todo",
+        "description": "Delete a todo",
+        "operationId": "delete_todo",
+        "tags": ["Todos"],
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TodoIdParam"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Todo deleted"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+            "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/todos/{id}/complete": {
+      "patch": {
+        "summary": "Toggle todo completion",
+        "description": "Mark todo as completed or pending",
+        "operationId": "toggle_todo_complete",
+        "tags": ["Todos"],
+        "security": [{"BearerAuth": []}],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TodoIdParam"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["completed"],
+                "properties": {
+                  "completed": {
+                    "type": "boolean",
+                    "description": "True to mark as completed, false to mark as pending"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Todo status updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TodoResponse"
+                }
+              }
+            },
+            "401": {
+              "$ref": "#/components/responses/Unauthorized"
+            },
+            "403": {
+              "$ref": "#/components/responses/Forbidden"
+            },
+            "404": {
+              "$ref": "#/components/responses/NotFound"
+            }
+          }
+        }
+      }
+    },
+    "/users/me": {
+      "get": {
+        "summary": "Get user profile",
+        "description": "Retrieve authenticated user's profile",
+        "operationId": "get_user_profile",
+        "tags": ["Users"],
+        "security": [{"BearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "User profile retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            },
+            "401": {
+              "$ref": "#/components/responses/Unauthorized"
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update user profile",
+        "description": "Update authenticated user's profile",
+        "operationId": "update_user_profile",
+        "tags": ["Users"],
+        "security": [{"BearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserProfileUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/BadRequest"
+            },
+            "401": {
+              "$ref": "#/components/responses/Unauthorized"
+            },
+            "422": {
+              "$ref": "#/components/responses/ValidationError"
+            }
+          }
+        }
+      }
+    },
+    "/users/me/avatar": {
+      "post": {
+        "summary": "Upload avatar",
+        "description": "Upload user avatar image",
+        "operationId": "upload_avatar",
+        "tags": ["Users"],
+        "security": [{"BearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file"],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Image file (JPG, PNG, GIF, WebP, max 5MB)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Avatar uploaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarUploadResponse"
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/BadRequest"
+            },
+            "401": {
+              "$ref": "#/components/responses/Unauthorized"
+            },
+            "413": {
+              "description": "Payload too large",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  },
+                  "example": {
+                    "detail": "File size exceeds 5MB limit"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai/generate-todo": {
+      "post": {
+        "summary": "Generate todos with AI",
+        "description": "Generate todo suggestions from a goal",
+        "operationId": "generate_todos",
+        "tags": ["AI"],
+        "security": [{"BearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AIGenerateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Todos generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIGenerateResponse"
+                }
+              }
+            },
+            "400": {
+              "$ref": "#/components/responses/BadRequest"
+            },
+            "401": {
+              "$ref": "#/components/responses/Unauthorized"
+            },
+            "429": {
+              "$ref": "#/components/responses/RateLimited"
+            },
+            "503": {
+              "$ref": "#/components/responses/ServiceUnavailable"
+            }
+          }
+        }
+      }
+    },
+    "/ai/summarize": {
+      "post": {
+        "summary": "Summarize todos",
+        "description": "Generate AI summary of user's todos",
+        "operationId": "summarize_todos",
+        "tags": ["AI"],
+        "security": [{"BearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [],
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Summary generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AISummarizeResponse"
+                }
+              }
+            },
+            "401": {
+              "$ref": "#/components/responses/Unauthorized"
+            },
+            "429": {
+              "$ref": "#/components/responses/RateLimited"
+            },
+            "503": {
+              "$ref": "#/components/responses/ServiceUnavailable"
+            }
+          }
+        }
+      }
+    },
+    "/ai/prioritize": {
+      "post": {
+        "summary": "Prioritize todos",
+        "description": "AI analysis to prioritize user's todos",
+        "operationId": "prioritize_todos",
+        "tags": ["AI"],
+        "security": [{"BearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [],
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Todos prioritized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIPrioritizeResponse"
+                }
+              }
+            },
+            "401": {
+              "$ref": "#/components/responses/Unauthorized"
+            },
+            "429": {
+              "$ref": "#/components/responses/RateLimited"
+            },
+            "503": {
+              "$ref": "#/components/responses/ServiceUnavailable"
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT token from httpOnly cookie or Authorization header"
+      }
+    },
+    "schemas": {
+      "SignupRequest": {
+        "type": "object",
+        "required": ["name", "email", "password"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "User's display name",
+            "example": "John Doe"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User's email address",
+            "example": "john@example.com"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "description": "User's password (min 8 characters)",
+            "example": "SecurePass123!"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User's email",
+            "example": "john@example.com"
+          },
+          "password": {
+            "type": "string",
+            "description": "User's password",
+            "example": "SecurePass123!"
+          }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/UserResponse"
+          },
+          "message": {
+            "type": "string",
+            "example": "Login successful"
+          }
+        }
+      },
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "User ID",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "name": {
+            "type": "string",
+            "example": "John Doe"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "john@example.com"
+          },
+          "avatar_url": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://res.cloudinary.com/demo/image/upload/avatar.jpg"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-01-23T10:30:00Z"
+          }
+        }
+      },
+      "TodoCreateRequest": {
+        "type": "object",
+        "required": ["title"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "Todo title",
+            "example": "Complete project documentation"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "description": "Todo description",
+            "example": "Write comprehensive docs for Phase 2"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "medium", "high"],
+            "default": "medium",
+            "example": "high"
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "nullable": true,
+            "example": "2025-01-30"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true,
+            "example": ["work", "urgent"]
+          }
+        }
+      },
+      "TodoUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "medium", "high"]
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          }
+        }
+      },
+      "TodoResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "completed"]
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "medium", "high"]
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "due_date": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "TodoListResponse": {
+        "type": "object",
+        "properties": {
+          "todos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TodoResponse"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "description": "Total count of user's todos",
+            "example": 150
+          },
+          "skip": {
+            "type": "integer",
+            "example": 0
+          },
+          "limit": {
+            "type": "integer",
+            "example": 20
+          },
+          "has_more": {
+            "type": "boolean",
+            "example": true
+          }
+        }
+      },
+      "UserProfileResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/UserResponse"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "stats": {
+                "type": "object",
+                "properties": {
+                  "total_todos": {
+                    "type": "integer",
+                    "example": 150
+                  },
+                  "pending_todos": {
+                    "type": "integer",
+                    "example": 45
+                  },
+                  "completed_todos": {
+                    "type": "integer",
+                    "example": 105
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "UserProfileUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          }
+        }
+      },
+      "AvatarUploadResponse": {
+        "type": "object",
+        "properties": {
+          "avatar_url": {
+            "type": "string",
+            "example": "https://res.cloudinary.com/demo/image/upload/avatar123.jpg"
+          },
+          "message": {
+            "type": "string",
+            "example": "Avatar uploaded successfully"
+          }
+        }
+      },
+      "AIGenerateRequest": {
+        "type": "object",
+        "required": ["goal"],
+        "properties": {
+          "goal": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 500,
+            "description": "Goal or topic to generate todos for",
+            "example": "Plan a birthday party for 20 people"
+          }
+        }
+      },
+      "AIGenerateResponse": {
+        "type": "object",
+        "properties": {
+          "todos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "priority": {
+                  "type": "string",
+                  "enum": ["low", "medium", "high"]
+                },
+                "due_date": {
+                  "type": "string",
+                  "format": "date"
+                }
+              }
+            }
+          },
+          "message": {
+            "type": "string",
+            "example": "Generated 5 todo suggestions"
+          }
+        }
+      },
+      "AISummarizeResponse": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string",
+            "example": "You have 150 todos. 45 are pending, including 5 high-priority items due this week."
+          },
+          "breakdown": {
+            "type": "object",
+            "properties": {
+              "high_priority": {
+                "type": "integer",
+                "example": 15
+              },
+              "medium_priority": {
+                "type": "integer",
+                "example": 20
+              },
+              "low_priority": {
+                "type": "integer",
+                "example": 10
+              }
+            }
+          },
+          "urgent_todos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": ["Complete project documentation", "Review PRs"]
+          }
+        }
+      },
+      "AIPrioritizeResponse": {
+        "type": "object",
+        "properties": {
+          "prioritized_todos": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "priority_score": {
+                  "type": "integer",
+                  "description": "AI-calculated priority score (0-100)",
+                  "example": 85
+                },
+                "reasoning": {
+                  "type": "string",
+                  "example": "High priority due to approaching deadline"
+                }
+              }
+            }
+          },
+          "message": {
+            "type": "string",
+            "example": "Todos prioritized by urgency and importance"
+          }
+        }
+      },
+      "MessageResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string",
+            "example": "Invalid credentials"
+          }
+        }
+      }
+    },
+    "parameters": {
+      "TodoIdParam": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "description": "Todo ID",
+        "example": "550e8400-e29b-41d4-a716-446655440000"
+      },
+      "SkipParam": {
+        "name": "skip",
+        "in": "query",
+        "schema": {
+          "type": "integer",
+          "default": 0,
+          "minimum": 0
+        },
+        "description": "Number of todos to skip (pagination)",
+        "example": 0
+      },
+      "LimitParam": {
+        "name": "limit",
+        "in": "query",
+        "schema": {
+          "type": "integer",
+          "default": 20,
+          "minimum": 1,
+          "maximum": 100
+        },
+        "description": "Number of todos to return (pagination)",
+        "example": 20
+      },
+      "StatusFilter": {
+        "name": "status",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": ["all", "pending", "completed"],
+          "default": "all"
+        },
+        "description": "Filter by todo status",
+        "example": "pending"
+      },
+      "PriorityFilter": {
+        "name": "priority",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "description": "Filter by todo priority",
+        "example": "high"
+      },
+      "SearchParam": {
+        "name": "search",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "minLength": 2
+        },
+        "description": "Search in todo title and description",
+        "example": "documentation"
+      },
+      "SortByParam": {
+        "name": "sort_by",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": ["created_at", "due_date", "priority"],
+          "default": "created_at"
+        },
+        "description": "Sort todos by field",
+        "example": "due_date"
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad request",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "detail": "Invalid input data"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Unauthorized",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "detail": "Invalid authentication credentials"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Forbidden",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "detail": "You don't have permission to access this resource"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "detail": "Todo not found"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Resource conflict",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "detail": "Email already registered"
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "description": "Validation error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "detail": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "loc": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "msg": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "Rate limit exceeded",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "detail": "Rate limit exceeded. Try again later."
+            }
+          }
+        }
+      },
+      "ServiceUnavailable": {
+        "description": "AI service temporarily unavailable",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "detail": "AI service is temporarily unavailable. Please try again later."
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Health",
+      "description": "Health check endpoints"
+    },
+    {
+      "name": "Authentication",
+      "description": "User authentication and session management"
+    },
+    {
+      "name": "Todos",
+      "description": "Todo CRUD operations"
+    },
+    {
+      "name": "Users",
+      "description": "User profile management"
+    },
+    {
+      "name": "AI",
+      "description": "AI-powered features"
+    }
+  ]
+}

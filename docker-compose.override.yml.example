@@ -1,0 +1,18 @@
+# Example docker-compose override for additional development tools
+# Copy this file to docker-compose.override.yml and customize as needed
+
+version: '3.8'
+
+services:
+  # pgAdmin for PostgreSQL Management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: todo-app-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@todoapp.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - '5050:80'
+    depends_on:
+      - postgres

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(set NODE_OPTIONS=--preserve-symlinks)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)"
+    ]
+  }
+}
