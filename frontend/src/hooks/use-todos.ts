@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { todosApi, ApiError } from '@/lib/api';
-import type { Todo, TodoPriority } from '@/types';
+import type { Todo, TodoPriority, CreateTodoRequest } from '@/types';
 
 interface TodoListParams {
   skip?: number;
@@ -46,7 +46,7 @@ export function useTodos(params: TodoListParams = {}) {
     setError(null);
     try {
       // Build API data - omit undefined fields
-      const apiData: Record<string, any> = {
+      const apiData: CreateTodoRequest = {
         title: todoData.title,
       };
 
@@ -55,7 +55,7 @@ export function useTodos(params: TodoListParams = {}) {
         apiData.description = todoData.description;
       }
       if (todoData.priority) {
-        apiData.priority = todoData.priority;
+        apiData.priority = todoData.priority as TodoPriority;
       }
       if (todoData.due_date) {
         apiData.due_date = todoData.due_date;
