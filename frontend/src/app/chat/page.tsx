@@ -6,12 +6,13 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
+import { getToken } from '@/lib/auth';
 import { Loader2 } from 'lucide-react';
 import ChatInterface from '@/components/ChatInterfaceAdvanced';
 
 export default function ChatPage() {
   const router = useRouter();
-  const { user, loading: authLoading, isAuthenticated, getToken } = useAuth();
+  const { user, loading: authLoading, isAuthenticated } = useAuth();
 
   // Redirect to login if not authenticated
   useEffect(() => {
