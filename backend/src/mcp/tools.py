@@ -18,7 +18,7 @@ class MCPTools:
         self.repo = todo_repository
         self.user_id = user_id
 
-    async def create_task(
+    def create_task(
         self,
         title: str,
         description: Optional[str] = None,
@@ -78,7 +78,7 @@ class MCPTools:
                 "error": f"Failed to create task: {str(e)}"
             }
 
-    async def list_tasks(
+    def list_tasks(
         self,
         status: Optional[str] = None,
         priority: Optional[str] = None,
@@ -129,7 +129,7 @@ class MCPTools:
                 "error": f"Failed to list tasks: {str(e)}"
             }
 
-    async def update_task(
+    def update_task(
         self,
         task_id: str,
         title: Optional[str] = None,
@@ -206,7 +206,7 @@ class MCPTools:
                 "error": f"Failed to update task: {str(e)}"
             }
 
-    async def delete_task(self, task_id: str) -> dict:
+    def delete_task(self, task_id: str) -> dict:
         """
         Delete a task.
 
@@ -244,7 +244,7 @@ class MCPTools:
                 "error": f"Failed to delete task: {str(e)}"
             }
 
-    async def complete_task(self, task_id: str) -> dict:
+    def complete_task(self, task_id: str) -> dict:
         """
         Mark a task as completed.
 

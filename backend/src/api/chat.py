@@ -4,7 +4,6 @@
 
 import json
 import os
-import asyncio
 from typing import Optional, List, Dict, Any
 from uuid import UUID
 from fastapi import APIRouter, HTTPException, status, Depends
@@ -75,12 +74,12 @@ def extract_tool_call(ai_response: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-async def execute_tool_calls(
+def execute_tool_calls(
     tool_calls: List[Dict[str, Any]],
     mcp_server: MCPServer
 ) -> List[Dict[str, Any]]:
     """
-    Execute multiple tool calls.
+    Execute multiple tool calls (synchronous).
 
     Args:
         tool_calls: List of tool call dicts with 'tool' and 'parameters'
@@ -95,7 +94,7 @@ async def execute_tool_calls(
         parameters = tool_call.get("parameters", {})
 
         try:
-            result = await mcp_server.call_tool(tool_name, parameters)
+            result = mcp_server.call_tool(tool_name, parameters)
             results.append({
                 "tool": tool_name,
                 "success": True,
@@ -113,7 +112,7 @@ async def execute_tool_calls(
 
 
 @router.post("/", response_model=ChatResponse)
-async def chat(
+def chat(
     request: ChatRequest,
     user_id: str = Depends(get_current_user_id),
     session: Session = Depends(get_session)
@@ -200,7 +199,7 @@ async def chat(
         if tool_call:
             # Execute the tool call
             logger.info(f"Executing tool call: {tool_call['tool']}")
-            results = await execute_tool_calls([tool_call], mcp_server)
+            results = execute_tool_calls([tool_call], mcp_server)
             tool_results = results
 
             # Format tool results for AI
@@ -243,6 +242,6 @@ async def chat(
 
 
 @router.get("/health")
-async def health_check():
+def health_check():
     """Health check endpoint for chat API"""
     return {"status": "healthy", "service": "chat-api"}

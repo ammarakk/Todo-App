@@ -38,15 +38,15 @@ class MCPServer:
 
         Args:
             name: Tool name (e.g., "add_task", "list_tasks")
-            func: Async function implementing the tool
+            func: Synchronous function implementing the tool
             description: Human-readable tool description
         """
         self.tools[name] = func
         logger.info(f"Registered MCP tool: {name} - {description or 'No description'}")
 
-    async def call_tool(self, tool_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
+    def call_tool(self, tool_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Execute an MCP tool by name.
+        Execute an MCP tool by name (synchronous).
 
         Args:
             tool_name: Name of the tool to execute
@@ -67,7 +67,7 @@ class MCPServer:
         logger.info(f"Executing MCP tool: {tool_name} with parameters: {list(parameters.keys())}")
 
         try:
-            result = await tool_func(**parameters)
+            result = tool_func(**parameters)
             logger.info(f"Tool '{tool_name}' executed successfully")
             return result
         except Exception as e:
