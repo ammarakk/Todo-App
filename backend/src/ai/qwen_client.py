@@ -3,12 +3,11 @@
 # Qwen Client - Hugging Face SDK wrapper with retry logic
 
 import os
-import asyncio
 import logging
 from typing import List, Dict, Any, Optional
 import random
 
-from huggingface_hub import AsyncInferenceClient
+from huggingface_hub import InferenceClient
 
 
 logger = logging.getLogger(__name__)
@@ -46,12 +45,12 @@ class QwenClient:
                 "Please set it in your .env file."
             )
 
-        # Initialize async inference client
-        self.client = AsyncInferenceClient(model=self.model, token=self.api_key)
+        # Initialize synchronous inference client (more reliable than async)
+        self.client = InferenceClient(model=self.model, token=self.api_key)
 
         logger.info(f"Qwen client initialized with model: {self.model}, timeout: {timeout}s")
 
-    async def generate(
+    def generate(
         self,
         messages: List[Dict[str, str]],
         temperature: float = 0.7,
@@ -71,6 +70,8 @@ class QwenClient:
         Raises:
             Exception: If all retries exhausted
         """
+        import time
+
         for attempt in range(self.max_retries):
             try:
                 logger.info(f"Qwen inference attempt {attempt + 1}/{self.max_retries}")
@@ -78,32 +79,17 @@ class QwenClient:
                 # Build prompt from messages
                 prompt = self._build_prompt(messages)
 
-                # Call Hugging Face API - text_generation returns an async generator
-                # We need to collect the full response
-                response_parts = []
-                async def collect_response():
-                    async for chunk in self.client.text_generation(
-                        prompt=prompt,
-                        temperature=temperature,
-                        max_new_tokens=max_tokens,
-                        do_sample=True
-                    ):
-                        response_parts.append(chunk)
-                    return "".join(response_parts)
-
-                response = await asyncio.wait_for(collect_response(), timeout=self.timeout)
+                # Call Hugging Face API with synchronous client
+                response = self.client.text_generation(
+                    prompt=prompt,
+                    temperature=temperature,
+                    max_new_tokens=max_tokens,
+                    do_sample=True,
+                    stream=False  # Get complete response, not a generator
+                )
 
                 logger.info("Qwen inference successful")
                 return response.strip()
-
-            except asyncio.TimeoutError:
-                logger.warning(f"Qwen inference timeout on attempt {attempt + 1}")
-                if attempt == self.max_retries - 1:
-                    raise TimeoutError(f"Qwen inference timed out after {self.max_retries} attempts")
-                # Exponential backoff with jitter
-                wait_time = (2 ** attempt) + random.uniform(0, 1)
-                logger.info(f"Retrying in {wait_time:.2f}s...")
-                await asyncio.sleep(wait_time)
 
             except Exception as e:
                 logger.error(f"Qwen inference failed on attempt {attempt + 1}: {str(e)}")
@@ -113,11 +99,11 @@ class QwenClient:
                 # Check if it's a rate limit error (HTTP 429)
                 if "429" in str(e) or "rate limit" in str(e).lower():
                     logger.warning("Rate limit detected, waiting 60 seconds...")
-                    await asyncio.sleep(60)
+                    time.sleep(60)
                 else:
                     wait_time = (2 ** attempt) + random.uniform(0, 1)
                     logger.info(f"Retrying in {wait_time:.2f}s...")
-                    await asyncio.sleep(wait_time)
+                    time.sleep(wait_time)
 
     def _build_prompt(self, messages: List[Dict[str, str]]) -> str:
         """

@@ -189,7 +189,7 @@ async def chat(
         ]
 
         # Get AI response
-        ai_response = await qwen_client.generate(qwen_messages)
+        ai_response = qwen_client.generate(qwen_messages)
 
         # Check if AI wants to call a tool
         tool_call = extract_tool_call(ai_response)
@@ -212,7 +212,7 @@ async def chat(
                 {"role": "user", "content": f"Tool executed successfully. Here is the result:\n{tool_result_text}\n\nPlease format this for the user in {language}."}
             ]
 
-            final_response = await qwen_client.generate(followup_messages)
+            final_response = qwen_client.generate(followup_messages)
 
         # Save assistant response
         conv_repo.add_message(
