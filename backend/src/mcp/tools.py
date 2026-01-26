@@ -5,7 +5,7 @@
 from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
-from backend.src.repositories.todo_repository import TodoRepository
+from src.repositories.todo_repository import TodoRepository
 
 
 class MCPTools:

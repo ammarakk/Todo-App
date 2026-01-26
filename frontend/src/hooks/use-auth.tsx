@@ -80,12 +80,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   /**
    * Signup with name, email, and password
+   * NOTE: Does not auto-login user - user must login separately
    */
   const signup = async (data: SignupRequest) => {
-    const response = await api.signup(data);
-    setToken(response.access_token);
-    setUser(response.user);
-    setUserState(response.user);
+    // Call signup API but don't store token/user (user must login separately)
+    await api.signup(data);
+    // Token and user are NOT set here - user must go to login page
   };
 
   /**

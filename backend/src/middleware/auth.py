@@ -6,18 +6,12 @@ from typing import Optional
 from fastapi import HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
-import os
+from src.core.config import settings
 
 
 # JWT Configuration
-JWT_SECRET = os.getenv("JWT_SECRET")
-JWT_ALGORITHM = "HS256"
-
-if not JWT_SECRET:
-    raise ValueError(
-        "JWT_SECRET not found in environment variables. "
-        "Please set it in your .env file."
-    )
+JWT_SECRET = settings.jwt_secret
+JWT_ALGORITHM = settings.jwt_algorithm
 
 # Security scheme for FastAPI
 security = HTTPBearer()

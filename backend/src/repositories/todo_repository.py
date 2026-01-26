@@ -6,9 +6,9 @@ from typing import List, Optional
 from uuid import UUID
 from datetime import datetime
 from sqlmodel import Session, select, col
-from backend.src.models.todo import Todo, Status, Priority
-from backend.src.models.conversation import Conversation
-from backend.src.models.message import Message
+from src.models.todo import Todo, Status, Priority
+from src.models.conversation import Conversation
+from src.models.message import Message
 
 
 class TodoRepository:

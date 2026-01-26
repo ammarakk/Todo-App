@@ -58,6 +58,18 @@ const nextConfig = {
             key: 'Referrer-Policy',
             value: 'origin-when-cross-origin'
           },
+          {
+            key: 'Content-Security-Policy',
+            value: "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.vercel.app https://*.hf.space https://huggingface.co https://*.googleapis.com; img-src 'self' data: https: https://*.cloudinary.com; connect-src 'self' https://*.hf.space https://*.vercel.app https://huggingface.co;"
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains'
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block'
+          },
         ],
       },
     ];

@@ -12,12 +12,12 @@ from pydantic import BaseModel, Field
 from sqlmodel import Session, create_engine
 from logging import getLogger
 
-from backend.src.middleware.auth import get_current_user_id
-from backend.src.ai.qwen_client import QwenClient
-from backend.src.ai.prompt_builder import PromptBuilder
-from backend.src.mcp.server import MCPServer
-from backend.src.mcp.registry import initialize_mcp_tools, register_mcp_tools_with_server
-from backend.src.repositories.todo_repository import ConversationRepository
+from src.middleware.auth import get_current_user_id
+from src.ai.qwen_client import QwenClient
+from src.ai.prompt_builder import PromptBuilder
+from src.mcp.server import MCPServer
+from src.mcp.registry import initialize_mcp_tools, register_mcp_tools_with_server
+from src.repositories.todo_repository import ConversationRepository
 
 
 logger = getLogger(__name__)

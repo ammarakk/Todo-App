@@ -4,9 +4,9 @@
 
 from uuid import UUID
 from sqlmodel import Session
-from backend.src.mcp.server import MCPServer
-from backend.src.mcp.tools import MCPTools
-from backend.src.repositories.todo_repository import TodoRepository
+from src.mcp.server import MCPServer
+from src.mcp.tools import MCPTools
+from src.repositories.todo_repository import TodoRepository
 
 
 def initialize_mcp_tools(session: Session, user_id: UUID) -> MCPTools:

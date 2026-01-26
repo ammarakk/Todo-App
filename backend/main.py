@@ -20,8 +20,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Import Phase III components
-from backend.src.api.chat import router as chat_router
-from backend.src.middleware.auth import get_current_user_id
+from src.api.chat import router as chat_router
+from src.middleware.auth import get_current_user_id
 
 
 @asynccontextmanager
