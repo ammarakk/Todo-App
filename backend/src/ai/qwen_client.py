@@ -78,16 +78,20 @@ class QwenClient:
                 # Build prompt from messages
                 prompt = self._build_prompt(messages)
 
-                # Call Hugging Face API with timeout
-                response = await asyncio.wait_for(
-                    self.client.text_generation(
+                # Call Hugging Face API - text_generation returns an async generator
+                # We need to collect the full response
+                response_parts = []
+                async def collect_response():
+                    async for chunk in self.client.text_generation(
                         prompt=prompt,
                         temperature=temperature,
                         max_new_tokens=max_tokens,
                         do_sample=True
-                    ),
-                    timeout=self.timeout
-                )
+                    ):
+                        response_parts.append(chunk)
+                    return "".join(response_parts)
+
+                response = await asyncio.wait_for(collect_response(), timeout=self.timeout)
 
                 logger.info("Qwen inference successful")
                 return response.strip()
