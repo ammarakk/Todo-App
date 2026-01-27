@@ -19,14 +19,14 @@ export function AIChatButton({ isOpen, onClick, unreadCount = 0 }: AIChatButtonP
       initial={{ scale: 0 }}
       animate={{ scale: 1 }}
       transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-      className="fixed bottom-6 right-6 z-50"
+      className="fixed bottom-20 right-4 z-50 md:bottom-6 md:right-6"
     >
       <motion.button
         onClick={onClick}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         className={`
-          relative w-16 h-16 rounded-full flex items-center justify-center
+          relative w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center
           bg-gradient-to-br shadow-lg
           transition-all duration-300
           ${

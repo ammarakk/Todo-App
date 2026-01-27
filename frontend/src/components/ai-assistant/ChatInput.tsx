@@ -42,7 +42,7 @@ export function ChatInput({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex gap-2 items-end p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700"
+      className="flex gap-2 items-end p-3 md:p-4 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700"
     >
       <textarea
         value={message}
@@ -51,27 +51,27 @@ export function ChatInput({
         placeholder={placeholder}
         disabled={disabled || isLoading}
         rows={1}
-        className="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-cyan-400 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
+        className="flex-1 px-3 md:px-4 py-2 md:py-3 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-cyan-400 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 text-sm md:text-base"
         style={{
-          minHeight: '48px',
-          maxHeight: '120px',
+          minHeight: '40px',
+          maxHeight: '100px',
         }}
         onInput={(e) => {
           const target = e.target as HTMLTextAreaElement;
           target.style.height = 'auto';
-          target.style.height = `${Math.min(target.scrollHeight, 120)}px`;
+          target.style.height = `${Math.min(target.scrollHeight, 100)}px`;
         }}
       />
       <button
         onClick={handleSend}
         disabled={disabled || isLoading || !message.trim()}
-        className="px-4 py-3 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 disabled:from-gray-400 disabled:to-gray-500 dark:disabled:from-gray-600 dark:disabled:to-gray-700 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed dark:shadow-[0_0_10px_rgba(6,182,212,0.3)] dark:hover:shadow-[0_0_15px_rgba(6,182,212,0.5)] flex-shrink-0"
+        className="px-3 md:px-4 py-2 md:py-3 bg-gradient-to-r from-cyan-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 disabled:from-gray-400 disabled:to-gray-500 dark:disabled:from-gray-600 dark:disabled:to-gray-700 text-white rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed dark:shadow-[0_0_10px_rgba(6,182,212,0.3)] dark:hover:shadow-[0_0_15px_rgba(6,182,212,0.5)] flex-shrink-0 min-w-[40px] md:min-w-[60px]"
         aria-label="Send message"
       >
         {isLoading ? (
-          <Loader2 className="w-5 h-5 animate-spin" />
+          <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" />
         ) : (
-          <Send className="w-5 h-5" />
+          <Send className="w-4 h-4 md:w-5 md:h-5" />
         )}
       </button>
     </motion.div>
