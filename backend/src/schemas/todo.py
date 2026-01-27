@@ -38,6 +38,7 @@ class TodoResponse(BaseModel):
     priority: str
     tags: Optional[List[str]]
     due_date: Optional[str]
+    reminder_sent: Optional[bool]
     created_at: str
     updated_at: str
 

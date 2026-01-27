@@ -187,6 +187,16 @@ export function CreateTodoModal({ onClose, onCreate }: CreateTodoModalProps) {
                         onChange={(e) => setDueDate(e.target.value)}
                         className="w-full px-2 sm:px-3 py-2 text-xs border border-gray-300 dark:border-green-500/50 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-green-500 dark:focus:shadow-[0_0_10px_rgba(74,222,128,0.5)] bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-all"
                       />
+                      {dueDate && (
+                        <div className="mt-1.5 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-200 dark:border-blue-800">
+                          <div className="flex items-center gap-1.5 text-xs text-blue-700 dark:text-blue-300">
+                            <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            <span className="font-medium">Reminder email will be sent 1 day before</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div>

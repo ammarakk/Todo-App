@@ -108,6 +108,14 @@ export function TodoList({ todos, loading, onToggleComplete, onDelete }: TodoLis
                         <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                           <Calendar className="w-3 h-3" />
                           {format(new Date(todo.due_date), 'MMM d, yyyy')}
+                          {!todo.reminder_sent && todo.status !== 'completed' && (
+                            <span
+                              className="ml-1 text-blue-500 dark:text-blue-400"
+                              title="Reminder scheduled"
+                            >
+                              🔔
+                            </span>
+                          )}
                         </span>
                       )}
 

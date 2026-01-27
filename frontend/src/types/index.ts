@@ -71,6 +71,7 @@ export interface Todo {
   completed_at?: string;
   user_id: string;
   tags?: string[];
+  reminder_sent?: boolean;
   created_at: string;
   updated_at: string;
 }

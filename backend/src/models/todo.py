@@ -76,6 +76,10 @@ class Todo(SQLModel, table=True):
         default=None,
         description='Completion timestamp',
     )
+    reminder_sent: Optional[bool] = Field(
+        default=False,
+        description='Whether reminder email has been sent',
+    )
     user_id: UUID = Field(
         default=None,
         foreign_key='users.id',

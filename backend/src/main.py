@@ -21,6 +21,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     Handles startup and shutdown events.
     """
+    # Scheduler instance
+    scheduler = None
+
     # Startup
     print(f"Starting Todo App API")
     print(f"Environment: {settings.env}")
@@ -32,9 +35,44 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         init_db()
         print("Database initialized")
 
+    # Start reminder scheduler if Gmail configured
+    if settings.gmail_email and settings.gmail_app_password:
+        try:
+            from apscheduler.schedulers.asyncio import AsyncIOScheduler
+            from src.services.reminder_service import check_and_send_reminders
+            from src.core.database import get_session
+
+            scheduler = AsyncIOScheduler()
+
+            # Add job to check reminders every hour
+            def run_reminder_check():
+                """Wrapper to get fresh session for each check."""
+                session = next(get_session())
+                try:
+                    check_and_send_reminders(session)
+                finally:
+                    session.close()
+
+            scheduler.add_job(
+                run_reminder_check,
+                'interval',
+                hours=1,
+                id='reminder_checker',
+                name='Check and send task reminders'
+            )
+            scheduler.start()
+            print("✅ Reminder scheduler started (runs every hour)")
+        except Exception as e:
+            print(f"⚠️  Failed to start reminder scheduler: {e}")
+    else:
+        print("⚠️  Reminder scheduler disabled (Gmail not configured)")
+
     yield
 
     # Shutdown
+    if scheduler:
+        scheduler.shutdown()
+        print("Reminder scheduler stopped")
     print("Shutting down Todo App API")
 
 

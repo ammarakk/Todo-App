@@ -72,6 +72,7 @@ async def list_todos(
             priority=todo.priority.value,
             tags=todo.tags,
             due_date=todo.due_date.isoformat() if todo.due_date else None,
+            reminder_sent=todo.reminder_sent,
             created_at=todo.created_at.isoformat(),
             updated_at=todo.updated_at.isoformat(),
         )
@@ -115,6 +116,7 @@ async def create_todo(
         priority=todo.priority.value,
         tags=todo.tags,
         due_date=todo.due_date.isoformat() if todo.due_date else None,
+        reminder_sent=todo.reminder_sent,
         created_at=todo.created_at.isoformat(),
         updated_at=todo.updated_at.isoformat(),
     )
@@ -167,6 +169,7 @@ async def toggle_todo_post(
         priority=todo.priority.value,
         tags=todo.tags,
         due_date=todo.due_date.isoformat() if todo.due_date else None,
+        reminder_sent=todo.reminder_sent,
         created_at=todo.created_at.isoformat(),
         updated_at=todo.updated_at.isoformat(),
     )
@@ -217,6 +220,7 @@ async def toggle_complete(
         priority=todo.priority.value,
         tags=todo.tags,
         due_date=todo.due_date.isoformat() if todo.due_date else None,
+        reminder_sent=todo.reminder_sent,
         created_at=todo.created_at.isoformat(),
         updated_at=todo.updated_at.isoformat(),
     )
@@ -255,6 +259,7 @@ async def get_todo(
         priority=todo.priority.value,
         tags=todo.tags,
         due_date=todo.due_date.isoformat() if todo.due_date else None,
+        reminder_sent=todo.reminder_sent,
         created_at=todo.created_at.isoformat(),
         updated_at=todo.updated_at.isoformat(),
     )
@@ -310,6 +315,7 @@ async def update_todo(
         priority=todo.priority.value,
         tags=todo.tags,
         due_date=todo.due_date.isoformat() if todo.due_date else None,
+        reminder_sent=todo.reminder_sent,
         created_at=todo.created_at.isoformat(),
         updated_at=todo.updated_at.isoformat(),
     )

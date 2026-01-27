@@ -59,6 +59,16 @@ class Settings(BaseSettings):
     )
 
     # ========================================
+    # Email Configuration (Gmail SMTP)
+    # ========================================
+    gmail_email: Optional[str] = Field(
+        default=None, description='Gmail address for sending reminders'
+    )
+    gmail_app_password: Optional[str] = Field(
+        default=None, description='Gmail app-specific password for SMTP'
+    )
+
+    # ========================================
     # Frontend URL
     # ========================================
     frontend_url: str = Field(
