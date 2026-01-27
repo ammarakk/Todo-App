@@ -288,6 +288,104 @@ class MCPTools:
                 "error": f"Failed to complete task: {str(e)}"
             }
 
+    def search_tasks(
+        self,
+        keyword: str,
+        status: Optional[str] = None,
+        limit: int = 50
+    ) -> dict:
+        """
+        Search tasks by keyword in title or description.
+
+        Args:
+            keyword: Keyword to search for (required)
+            status: Optional filter by status - 'pending' or 'completed'
+            limit: Maximum number of tasks to return (default: 50)
+
+        Returns:
+            Dict with list of matching tasks or error message
+        """
+        try:
+            todos = self.repo.search(
+                user_id=self.user_id,
+                keyword=keyword,
+                status=status,
+                limit=limit
+            )
+
+            return {
+                "success": True,
+                "tasks": [
+                    {
+                        "id": str(todo.id),
+                        "title": todo.title,
+                        "description": todo.description,
+                        "status": todo.status.value,
+                        "priority": todo.priority.value,
+                        "due_date": todo.due_date.isoformat() if todo.due_date else None,
+                        "tags": todo.tags,
+                        "created_at": todo.created_at.isoformat(),
+                    }
+                    for todo in todos
+                ],
+                "count": len(todos),
+                "message": f"Found {len(todos)} task(s) matching '{keyword}'"
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Failed to search tasks: {str(e)}"
+            }
+
+    def bulk_complete(
+        self,
+        task_ids: List[str]
+    ) -> dict:
+        """
+        Mark multiple tasks as completed at once.
+
+        Args:
+            task_ids: List of task IDs to mark as completed (required)
+
+        Returns:
+            Dict with list of completed task details or error message
+        """
+        try:
+            # Convert string IDs to UUIDs
+            task_uuids = [UUID(tid) for tid in task_ids]
+
+            todos = self.repo.bulk_complete(
+                user_id=self.user_id,
+                task_ids=task_uuids
+            )
+
+            return {
+                "success": True,
+                "tasks": [
+                    {
+                        "id": str(todo.id),
+                        "title": todo.title,
+                        "status": todo.status.value,
+                        "completed_at": todo.completed_at.isoformat() if todo.completed_at else None
+                    }
+                    for todo in todos
+                ],
+                "count": len(todos),
+                "message": f"Marked {len(todos)} task(s) as completed!"
+            }
+
+        except ValueError as e:
+            return {
+                "success": False,
+                "error": f"Invalid task ID format: {str(e)}"
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Failed to bulk complete tasks: {str(e)}"
+            }
+
 
 # Export for use in other modules
 __all__ = ['MCPTools']

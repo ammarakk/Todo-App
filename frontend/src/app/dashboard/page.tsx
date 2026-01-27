@@ -10,12 +10,16 @@ import { TodoStats } from '@/components/dashboard/TodoStats';
 import { TodoList } from '@/components/dashboard/TodoList';
 import { TodoFilters } from '@/components/dashboard/TodoFilters';
 import { CreateTodoModal } from '@/components/dashboard/CreateTodoModal';
+// T026: Import AI chat components
+import { AIChatButton, AIChatPanel } from '@/components/ai-assistant';
 import { Loader2 } from 'lucide-react';
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading, isAuthenticated } = useAuth();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  // T026: AI chat state
+  const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const [filters, setFilters] = useState({
     status: 'all' as 'all' | 'pending' | 'completed',
     priority: undefined as string | undefined,
@@ -74,6 +78,13 @@ export default function DashboardPage() {
     }
   };
 
+  // T027: Handle AI actions - sync state with dashboard
+  const handleAIActionExecuted = (action: string, data?: any) => {
+    console.log('AI action executed:', action, data);
+    // Refetch todos to show changes made by AI
+    refetch();
+  };
+
   return (
     <TopNavLayout>
       {/* Welcome Section */}
@@ -130,6 +141,17 @@ export default function DashboardPage() {
           onCreate={handleCreateTodo}
         />
       )}
+
+      {/* T026: AI Chat Button and Panel */}
+      <AIChatButton
+        isOpen={isAIChatOpen}
+        onClick={() => setIsAIChatOpen(!isAIChatOpen)}
+      />
+      <AIChatPanel
+        isOpen={isAIChatOpen}
+        onClose={() => setIsAIChatOpen(false)}
+        onActionExecuted={handleAIActionExecuted}
+      />
     </TopNavLayout>
   );
 }

@@ -1,9 +1,11 @@
-# Implements: T023-T029
+# Implements: Phase 3 AI Assistant Integration (T005-T018, T030-T034)
 # Phase III - AI-Powered Todo Chatbot
 # Chat API Endpoint - Full implementation with Qwen and MCP tools
 
 import json
 import os
+import re
+import time
 from typing import Optional, List, Dict, Any
 from uuid import UUID
 from fastapi import APIRouter, HTTPException, status, Depends
@@ -20,7 +22,7 @@ from src.repositories.todo_repository import ConversationRepository
 
 
 logger = getLogger(__name__)
-router = APIRouter(prefix="/api/chat", tags=["Chat"])
+router = APIRouter(prefix="/api/ai-chat", tags=["AI Chat"])  # Changed from /api/chat for dashboard integration
 
 # Database setup
 DATABASE_URL = os.getenv("NEON_DATABASE_URL", "sqlite:///./test.db")
@@ -72,6 +74,238 @@ def extract_tool_call(ai_response: str) -> Optional[Dict[str, Any]]:
         except (json.JSONDecodeError, IndexError):
             logger.warning("Failed to parse tool call from AI response")
     return None
+
+
+def sanitize_input(message: str) -> str:
+    """
+    Sanitize user input to prevent injection attacks.
+
+    Removes HTML tags, SQL injection patterns, and suspicious characters.
+
+    Args:
+        message: Raw user message
+
+    Returns:
+        Sanitized message
+    """
+    # Remove HTML tags
+    message = re.sub(r'<[^>]+>', '', message)
+
+    # Remove common SQL injection patterns
+    sql_patterns = [
+        r"(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|TRUNCATE)\b)",
+        r"(\b(UNION|JOIN|WHERE)\b.*\b(OR|AND)\b)",
+        r"(;|\-\-|#|\/\*|\*\/)",
+        r"(\bEXEC\b|\bEXECUTE\b)",
+    ]
+    for pattern in sql_patterns:
+        message = re.sub(pattern, '', message, flags=re.IGNORECASE)
+
+    # Remove excessive whitespace
+    message = ' '.join(message.split())
+
+    return message.strip()
+
+
+# T005: AI Command Request Schema for Dashboard Integration
+class AICommandRequest(BaseModel):
+    """Request model for AI command endpoint (dashboard integration)"""
+    message: str = Field(
+        ...,
+        min_length=1,
+        max_length=1000,
+        description="Natural language command from user"
+    )
+    conversationId: Optional[str] = Field("new", description="Conversation UUID or 'new' to start new")
+
+
+class AICommandResponse(BaseModel):
+    """Response model for AI command endpoint"""
+    success: bool = Field(..., description="Whether command executed successfully")
+    action: str = Field(..., description="Action executed: create_task, list_tasks, update_task, delete_task, complete_task, clarify")
+    message: str = Field(..., description="Human-readable response from AI")
+    data: Optional[Dict[str, Any]] = Field(None, description="Action-specific data (e.g., created task, task list)")
+
+
+@router.post("/command", response_model=AICommandResponse)
+def ai_command(
+    request: AICommandRequest,
+    user_id: str = Depends(get_current_user_id),
+    session: Session = Depends(get_session)
+):
+    """
+    AI Command Endpoint for Dashboard Integration.
+
+    This endpoint processes natural language commands from the floating AI chat panel,
+    executes them via MCP tools, and returns structured responses.
+
+    Flow:
+    1. Sanitize input
+    2. Verify JWT and extract user_id
+    3. Load or create conversation
+    4. Build message array with conversation history
+    5. Send to Qwen AI model
+    6. Parse AI response (action + parameters)
+    7. Execute action via MCP tools
+    8. Save messages to database
+    9. Return structured response
+
+    Args:
+        request: AI command request with message
+        user_id: Extracted from JWT token
+        session: Database session
+
+    Returns:
+        AI command response with action, message, and data
+    """
+    start_time = time.time()
+    try:
+        # T008: Input sanitization
+        sanitized_message = sanitize_input(request.message)
+        logger.info(f"AI command from user {user_id}: {sanitized_message[:50]}...")
+
+        user_uuid = UUID(user_id)
+
+        # Initialize repositories and MCP
+        conv_repo = ConversationRepository(session)
+
+        # Handle conversation ID
+        if request.conversationId == "new":
+            conversation = conv_repo.get_or_create_conversation(user_uuid, None)
+        else:
+            try:
+                conversation_uuid = UUID(request.conversationId)
+                conversation = conv_repo.get_conversation(conversation_uuid)
+                if not conversation or conversation.user_id != user_uuid:
+                    # Create new conversation if invalid or belongs to another user
+                    conversation = conv_repo.get_or_create_conversation(user_uuid, None)
+            except ValueError:
+                conversation = conv_repo.get_or_create_conversation(user_uuid, None)
+
+        # Save user message
+        conv_repo.add_message(
+            conversation_id=conversation.id,
+            role="user",
+            content=sanitized_message
+        )
+
+        # Detect language
+        language = PromptBuilder.detect_language(sanitized_message)
+
+        # Load conversation history (last 50 messages for performance)
+        history = conv_repo.get_conversation_history(conversation.id, limit=50)
+        messages = [
+            {"role": msg.role, "content": msg.content}
+            for msg in history
+        ]
+
+        # Initialize Qwen client
+        qwen_client = QwenClient()
+
+        # Initialize MCP server and tools
+        mcp_server = MCPServer()
+        mcp_tools = initialize_mcp_tools(session, user_uuid)
+        register_mcp_tools_with_server(mcp_server, mcp_tools)
+
+        # Build system prompt with tool definitions
+        tool_descriptions = mcp_server.list_tools()
+        system_prompt = PromptBuilder.build_system_prompt(
+            language=language,
+            tools_available=tool_descriptions
+        )
+
+        # Prepare messages for Qwen
+        qwen_messages = [
+            {"role": "system", "content": system_prompt},
+            *messages
+        ]
+
+        # Get AI response
+        ai_response = qwen_client.generate(qwen_messages)
+
+        # Check if AI wants to call a tool
+        tool_call = extract_tool_call(ai_response)
+
+        action = "clarify"
+        result_data = None
+        tool_results = []
+
+        if tool_call:
+            # Execute the tool call
+            tool_name = tool_call.get("tool")
+            logger.info(f"Executing tool: {tool_name}")
+
+            results = execute_tool_calls([tool_call], mcp_server)
+            tool_results = results
+
+            # Map tool name to action
+            tool_to_action = {
+                "create_todo": "create_task",
+                "list_todos": "list_tasks",
+                "update_todo": "update_task",
+                "delete_todo": "delete_task",
+                "complete_todo": "complete_task",
+                "search_tasks": "search_by_keyword",
+                "bulk_complete": "bulk_complete"
+            }
+            action = tool_to_action.get(tool_name, "clarify")
+
+            # Extract result data
+            if results and results[0].get("success"):
+                result_data = results[0].get("result")
+
+            # Format tool results for AI
+            tool_result_text = json.dumps(results, indent=2)
+
+            # Ask AI to format the tool result for user
+            followup_messages = qwen_messages + [
+                {"role": "assistant", "content": ai_response},
+                {"role": "user", "content": f"Tool executed successfully. Here is the result:\n{tool_result_text}\n\nPlease format this for the user in {language}."}
+            ]
+
+            final_response = qwen_client.generate(followup_messages)
+        else:
+            # No tool call, just conversation
+            final_response = ai_response
+            action = "clarify"
+
+        # Save assistant response
+        conv_repo.add_message(
+            conversation_id=conversation.id,
+            role="assistant",
+            content=final_response,
+            tool_calls={"calls": tool_results} if tool_results else None
+        )
+
+        # Log performance
+        response_time = time.time() - start_time
+        logger.info(f"AI command completed in {response_time:.2f}s: action={action}")
+
+        return AICommandResponse(
+            success=True,
+            action=action,
+            message=final_response,
+            data=result_data
+        )
+
+    except ValueError as e:
+        logger.error(f"Validation error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid request: {str(e)}"
+        )
+    except Exception as e:
+        logger.error(f"AI command endpoint error: {str(e)}", exc_info=True)
+        # T017: Error handling for AI service failures
+        return AICommandResponse(
+            success=False,
+            action="error",
+            message="AI assistant is temporarily unavailable. Please try again or use the manual controls.",
+            data=None
+        )
+
+
+# Keep existing standalone chat endpoint for backward compatibility during migration
 
 
 def execute_tool_calls(

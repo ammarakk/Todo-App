@@ -113,7 +113,8 @@ app.include_router(auth.router, prefix='/api/auth', tags=['Authentication'])
 app.include_router(todos.router, prefix='/api/todos', tags=['Todos'])
 app.include_router(users.router, prefix='/api/users', tags=['Users'])
 app.include_router(ai.router, prefix='/api/ai', tags=['AI'])
-app.include_router(chat.router, tags=['Chat'])
+# T010: Added AI chat router for dashboard integration with /api/ai-chat prefix
+app.include_router(chat.router, tags=['AI Chat'])  # Router has /api/ai-chat prefix defined in chat.py
 
 
 if __name__ == '__main__':

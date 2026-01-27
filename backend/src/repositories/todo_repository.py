@@ -183,6 +183,58 @@ class TodoRepository:
         """
         return self.update(todo_id, user_id, status="completed")
 
+    def search(
+        self,
+        user_id: UUID,
+        keyword: str,
+        status: Optional[str] = None,
+        limit: int = 50
+    ) -> List[Todo]:
+        """
+        Search todos by keyword in title or description.
+
+        Args:
+            user_id: User ID to search todos for
+            keyword: Keyword to search for (case-insensitive)
+            status: Optional status filter (pending, completed)
+            limit: Maximum number of todos to return
+
+        Returns:
+            List of matching Todo objects
+        """
+        query = select(Todo).where(
+            Todo.user_id == user_id,
+            (Todo.title.ilike(f'%{keyword}%')) | (Todo.description.ilike(f'%{keyword}%'))
+        )
+
+        if status:
+            query = query.where(Todo.status == Status(status))
+
+        query = query.order_by(col(Todo.created_at).desc()).limit(limit)
+        return list(self.session.exec(query).all())
+
+    def bulk_complete(
+        self,
+        user_id: UUID,
+        task_ids: List[UUID]
+    ) -> List[Todo]:
+        """
+        Mark multiple todos as completed.
+
+        Args:
+            user_id: User ID (for authorization)
+            task_ids: List of todo IDs to complete
+
+        Returns:
+            List of updated Todo objects
+        """
+        completed_todos = []
+        for task_id in task_ids:
+            todo = self.mark_completed(task_id, user_id)
+            if todo:
+                completed_todos.append(todo)
+        return completed_todos
+
 
 class ConversationRepository:
     """

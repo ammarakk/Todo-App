@@ -3,7 +3,6 @@ import { Inter } from 'next/font/google';
 
 import { AuthProvider } from '@/hooks/use-auth';
 import { SplashWrapper } from '@/components/common/SplashWrapper';
-import { ChatWidgetProvider } from '@/components/ChatWidgetProvider';
 import '@/styles/globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -24,7 +23,6 @@ export default function RootLayout({
         <SplashWrapper>
           <AuthProvider>
             {children}
-            <ChatWidgetProvider />
           </AuthProvider>
         </SplashWrapper>
       </body>
