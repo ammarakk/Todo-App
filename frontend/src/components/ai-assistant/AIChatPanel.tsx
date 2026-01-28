@@ -69,7 +69,7 @@ export function AIChatPanel({ isOpen, onClose, onActionExecuted }: AIChatPanelPr
           }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.2 }}
-          className="fixed bottom-20 right-4 left-4 md:left-auto md:right-6 w-auto md:w-full md:max-w-md h-[calc(100vh-80px)] md:h-auto bg-white dark:bg-gray-900 rounded-2xl shadow-2xl dark:shadow-[0_0_40px_rgba(6,182,212,0.3)] border border-gray-200 dark:border-cyan-500/30 flex flex-col overflow-hidden z-50"
+          className="fixed bottom-20 left-3 right-3 sm:left-auto sm:right-4 max-w-md w-auto max-h-[80vh] overflow-y-auto bg-white dark:bg-gray-900 rounded-2xl shadow-2xl dark:shadow-[0_0_40px_rgba(6,182,212,0.3)] border border-gray-200 dark:border-cyan-500/30 flex flex-col z-50"
         >
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-cyan-500 to-purple-600 dark:from-cyan-600 dark:to-purple-700">

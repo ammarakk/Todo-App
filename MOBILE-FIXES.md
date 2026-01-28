@@ -62,6 +62,39 @@ className="flex gap-2 items-end p-3 md:p-4 ... text-sm md:text-base"
 
 ---
 
+### **4. ISSUE: Chat Window Left Overflow (Mobile)** 🛠
+**Problem:** Chat window opens → goes out of screen on left side (mobile)
+**Reason:** Fixed width without proper left boundary constraint
+
+**Fix Applied:**
+```tsx
+// Container positioning
+className="
+  fixed
+  bottom-20
+  left-3 right-3           // Full safe margins (mobile)
+  sm:left-auto sm:right-4  // Desktop right-only
+  max-w-md
+  w-auto
+  max-h-[80vh]
+  overflow-y-auto
+"
+```
+
+**Mobile:** `left-3 right-3` (prevents left overflow, centered within screen)
+**Desktop:** `sm:left-auto sm:right-4` (floating on right)
+
+**Safety Rules:**
+- ✅ Fixed positioning with `left` + `right` constraints
+- ✅ `max-h-[80vh]` + `overflow-y-auto` prevents vertical overflow
+- ✅ `w-auto` + `max-w-md` for flexible width
+- ✅ No transform/overflow-hidden on parent containers
+- ✅ Floating icon alignment: `right-16 bottom-16 z-9999`
+
+**Result:** Chat window stays fully inside viewport on all devices
+
+---
+
 ## 🚀 Deployment Status
 
 ### **GitHub:** ✅ Pushed to `001-ai-assistant` branch
@@ -178,7 +211,8 @@ https://huggingface.co/spaces/ammaraak/todo-app
 3. ✅ Input field mobile-friendly
 4. ✅ All touch targets appropriate size
 5. ✅ Height calculations prevent viewport overflow
-6. ✅ Pushed to GitHub for Vercel deployment
+6. ✅ **NEW: Chat window left overflow prevented (Issue 4)**
+7. ✅ Pushed to GitHub for Vercel deployment
 
 **Next:** Wait 5 minutes for Vercel deployment, then test on mobile!
 
