@@ -7,15 +7,16 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-export async function GET(request: NextRequest, { params }: { params: { path: string[] } }) {
-  const path = params.path.join('/');
+export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const path = (await params).path.join('/');
   const url = `${BACKEND_URL}/api/${path}${request.nextUrl.search}`;
+
+  console.log(`[API Proxy GET] ${request.url} -> ${url}`);
 
   const response = await fetch(url, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      // Forward authorization header if present
       ...(request.headers.get('authorization') && {
         Authorization: request.headers.get('authorization')!,
       }),
@@ -26,11 +27,13 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
   return NextResponse.json(data, { status: response.status });
 }
 
-export async function POST(request: NextRequest, { params }: { params: { path: string[] } }) {
-  const path = params.path.join('/');
+export async function POST(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const path = (await params).path.join('/');
   const url = `${BACKEND_URL}/api/${path}`;
 
   const body = await request.text();
+
+  console.log(`[API Proxy POST] ${request.url} -> ${url}`);
 
   const response = await fetch(url, {
     method: 'POST',
@@ -47,11 +50,13 @@ export async function POST(request: NextRequest, { params }: { params: { path: s
   return NextResponse.json(data, { status: response.status });
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { path: string[] } }) {
-  const path = params.path.join('/');
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const path = (await params).path.join('/');
   const url = `${BACKEND_URL}/api/${path}`;
 
   const body = await request.text();
+
+  console.log(`[API Proxy PATCH] ${request.url} -> ${url}`);
 
   const response = await fetch(url, {
     method: 'PATCH',
@@ -68,9 +73,11 @@ export async function PATCH(request: NextRequest, { params }: { params: { path: 
   return NextResponse.json(data, { status: response.status });
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { path: string[] } }) {
-  const path = params.path.join('/');
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const path = (await params).path.join('/');
   const url = `${BACKEND_URL}/api/${path}`;
+
+  console.log(`[API Proxy DELETE] ${request.url} -> ${url}`);
 
   const response = await fetch(url, {
     method: 'DELETE',
