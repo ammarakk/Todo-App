@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  labels:
+    app: ollama
+spec:
+  replicas: {{ .Values.replicaCount.ollama }}
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      containers:
+      - name: ollama
+        image: ollama/ollama:latest
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 11434
+          name: http
+        resources:
+          {{- toYaml .Values.resources.ollama | nindent 10 }}
+        volumeMounts:
+        - name: models
+          mountPath: /models
+        livenessProbe:
+          exec:
+            command:
+            - ollama
+            - list
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command:
+            - ollama
+            - list
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: models
+        persistentVolumeClaim:
+          claimName: ollama-models-pvc

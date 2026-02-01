@@ -1,0 +1,12 @@
+apiVersion: v2
+name: todo-app
+description: A Helm chart for Todo application - Phase IV Kubernetes deployment
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - todo
+  - kubernetes
+  - fullstack
+maintainers:
+  - name: Phase IV Team

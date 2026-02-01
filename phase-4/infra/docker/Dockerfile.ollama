@@ -1,0 +1,16 @@
+FROM ollama/ollama:latest
+
+# Expose Ollama API port
+EXPOSE 11434
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
+  CMD ollama list || exit 1
+
+# Set up models directory
+ENV OLLAMA_MODELS=/models
+
+VOLUME ["/models"]
+
+# Start Ollama server
+CMD ["ollama", "serve"]

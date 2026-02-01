@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app: backend
+spec:
+  replicas: {{ .Values.replicaCount.backend }}
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: todo-backend:latest
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: DATABASE_URL
+          value: {{ .Values.env.backend.DATABASE_URL }}
+        - name: JWT_SECRET
+          value: {{ .Values.env.backend.JWT_SECRET }}
+        - name: OLLAMA_HOST
+          value: {{ .Values.env.backend.OLLAMA_HOST }}
+        - name: PORT
+          value: {{ .Values.env.backend.PORT }}
+        resources:
+          {{- toYaml .Values.resources.backend | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5

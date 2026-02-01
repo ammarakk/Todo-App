@@ -1,0 +1,102 @@
+# Docker Compose - Backend Services Only (Frontend Excluded)
+# Use this to test backend, chatbot, and Ollama while frontend builds
+
+version: '3.8'
+
+services:
+  # Backend Service (FastAPI)
+  backend:
+    image: todo-backend:latest
+    container_name: todo-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://todo:password@postgres:5432/tododb
+      - JWT_SECRET=your-jwt-secret-key-change-in-production
+      - OLLAMA_HOST=http://ollama:11434
+      - PORT=8000
+    depends_on:
+      - postgres
+      - ollama
+    networks:
+      - todo-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Chatbot Service (FastAPI + Ollama Client)
+  chatbot:
+    image: todo-chatbot:latest
+    container_name: todo-chatbot
+    ports:
+      - "8001:8001"
+    environment:
+      - BACKEND_API_URL=http://backend:8000
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - MODEL_NAME=qwen2.5:0.5b
+      - CHAT_PORT=8001
+    depends_on:
+      - backend
+      - ollama
+    networks:
+      - todo-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/api/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # Ollama LLM Runtime
+  ollama:
+    image: ollama/ollama:latest
+    container_name: todo-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-models:/models
+    networks:
+      - todo-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: todo-postgres
+    environment:
+      - POSTGRES_DB=tododb
+      - POSTGRES_USER=todo
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - todo-network
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U todo -d tododb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  todo-network:
+    driver: bridge
+
+volumes:
+  ollama-models:
+    driver: local
+  postgres-data:
+    driver: local

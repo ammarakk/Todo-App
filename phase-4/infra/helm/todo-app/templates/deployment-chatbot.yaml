@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chatbot
+  labels:
+    app: chatbot
+spec:
+  replicas: {{ .Values.replicaCount.chatbot }}
+  selector:
+    matchLabels:
+      app: chatbot
+  template:
+    metadata:
+      labels:
+        app: chatbot
+    spec:
+      containers:
+      - name: chatbot
+        image: todo-chatbot:latest
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 8001
+          name: http
+        env:
+        - name: BACKEND_API_URL
+          value: {{ .Values.env.chatbot.BACKEND_API_URL }}
+        - name: OLLAMA_BASE_URL
+          value: {{ .Values.env.chatbot.OLLAMA_BASE_URL }}
+        - name: MODEL_NAME
+          value: {{ .Values.env.chatbot.MODEL_NAME }}
+        resources:
+          {{- toYaml .Values.resources.chatbot | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5

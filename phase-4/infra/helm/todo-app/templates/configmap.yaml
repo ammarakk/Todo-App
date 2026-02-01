@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: todo-app-config
+data:
+  # Backend configuration
+  DATABASE_URL: {{ .Values.env.backend.DATABASE_URL }}
+  OLLAMA_HOST: {{ .Values.env.backend.OLLAMA_HOST }}
+  
+  # Frontend configuration
+  NEXT_PUBLIC_BACKEND_URL: {{ .Values.env.frontend.NEXT_PUBLIC_BACKEND_URL }}
+  NEXT_PUBLIC_API_URL: {{ .Values.env.frontend.NEXT_PUBLIC_API_URL }}
+  
+  # Chatbot configuration
+  BACKEND_API_URL: {{ .Values.env.chatbot.BACKEND_API_URL }}
+  OLLAMA_BASE_URL: {{ .Values.env.chatbot.OLLAMA_BASE_URL }}
+  MODEL_NAME: {{ .Values.env.chatbot.MODEL_NAME }}
