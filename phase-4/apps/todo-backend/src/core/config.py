@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     # JWT Authentication
     # ========================================
     jwt_secret: str = Field(
-        ...,
+        default='development-secret-key-change-in-production-min-32-chars',
         min_length=32,
         description='Secret key for JWT token signing (min 32 characters)',
     )
@@ -88,7 +88,14 @@ class Settings(BaseSettings):
     # ========================================
     bcrypt_rounds: int = Field(default=12, description='Bcrypt password hashing rounds')
     cors_origins: list[str] = Field(
-        default=['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://127.0.0.1:3000', 'http://127.0.0.1:3001', 'http://127.0.0.1:3002'], description='CORS allowed origins'
+        default=[
+            'http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002',
+            'http://127.0.0.1:3000', 'http://127.0.0.1:3001', 'http://127.0.0.1:3002',
+            'https://todo-frontend-alpha-five.vercel.app',
+            'https://todo-frontend.vercel.app',
+            'https://*.vercel.app'
+        ],
+        description='CORS allowed origins'
     )
 
     @field_validator('env')
