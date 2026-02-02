@@ -98,6 +98,14 @@ class Settings(BaseSettings):
         description='CORS allowed origins'
     )
 
+    @field_validator('cors_origins', mode='before')
+    @classmethod
+    def parse_cors_origins(cls, v):
+        """Parse CORS origins from string or list."""
+        if isinstance(v, str):
+            return [origin.strip() for origin in v.split(',')]
+        return v
+
     @field_validator('env')
     @classmethod
     def validate_environment(cls, v: str) -> str:
