@@ -1,0 +1,139 @@
+# Error Handling Prompt
+
+## Purpose
+
+Define how to handle errors gracefully and provide helpful recovery options.
+
+## Error Categories
+
+### 1. Task Not Found
+**When**: User references a non-existent task ID or title
+
+**Response Strategy**:
+- Acknowledge the task couldn't be found
+- Offer to list similar tasks
+- Suggest creating a new task if it doesn't exist
+
+**Examples**:
+- "I couldn't find a task with that ID. Would you like me to list your active tasks?"
+- "No task named '{title}' found. Would you like me to create it?"
+
+### 2. Invalid Input
+**When**: User provides invalid data (wrong format, out of range, etc.)
+
+**Response Strategy**:
+- Explain what was invalid
+- Provide the correct format or acceptable values
+- Offer to try again
+
+**Examples**:
+- "The priority must be one of: low, medium, high, urgent. Please try again."
+- "I couldn't understand the date format. Try saying 'tomorrow at 5pm' or 'next Monday'."
+
+### 3. Database Errors
+**When**: System fails to save/load due to database issues
+
+**Response Strategy**:
+- Apologize for the technical issue
+- Assure the user their data is safe
+- Offer to retry
+
+**Examples**:
+- "I'm having trouble saving that right now. Please try again in a moment."
+- "Something went wrong on my end. Let me try that again."
+
+### 4. AI Processing Errors
+**When**: Intent detection or extraction fails
+
+**Response Strategy**:
+- Admit uncertainty about what the user wants
+- Ask for rephrasing
+- Offer manual form-based creation as fallback
+
+**Examples**:
+- "I'm not sure what you'd like to do. Could you rephrase that?"
+- "I'm having trouble understanding. Would you like to fill out a task form instead?"
+
+### 5. Validation Errors
+**When**: Extracted data fails validation
+
+**Response Strategy**:
+- List specific validation errors
+- Ask user to correct the issues
+- Highlight required vs optional fields
+
+**Examples**:
+- "I need a bit more information:
+  - Title: Required (missing)
+  - Priority: Optional (will use 'medium')
+  
+  What's the task title?"
+
+## Fallback Strategies
+
+### Fallback 1: Ask for Rephrasing
+"I'm not sure I understood that correctly. Could you say it differently?"
+
+### Fallback 2: Step-by-Step Creation
+"Let's create this task step by step:
+1. What's the task title?
+2. When is it due?
+3. How important is it?"
+
+### Fallback 3: List Similar Tasks
+"I found these similar tasks:
+- Task 1: {title}
+- Task 2: {title}
+
+Did you mean one of these?"
+
+### Fallback 4: Suggest Manual Creation
+"Would you prefer to fill out a form to create this task? I can guide you through each field."
+
+## Error Recovery Flow
+
+```
+Error Detected → Log Error → Determine Error Type
+                                      ↓
+                    ┌─────────────────┴─────────────────┐
+           Recoverable (User Error)           System Error
+                    ↓                              ↓
+         Ask for Correction/Retry         Apologize & Retry
+                    ↓                              ↓
+          User Provides Input            System Recovers
+                    ↓                              ↓
+              Retry Operation              Resume Normal
+                    ↓                              ↓
+              Success or Next Fallback
+```
+
+## Communication Principles
+
+1. **Be Transparent**: Admit when something goes wrong
+2. **Be Specific**: Explain exactly what the problem is
+3. **Be Helpful**: Always offer a next step or solution
+4. **Be Blameless**: Never make the user feel at fault
+5. **Be Patient**: Allow users to correct mistakes without judgment
+
+## Tone Examples
+
+✅ **Good**:
+- "I couldn't find that task. Let me list your active tasks to help."
+- "I need a little more information. What's the task title?"
+- "Something went wrong, but don't worry—your data is safe."
+
+❌ **Bad**:
+- "Error: Task not found."
+- "You didn't provide enough information."
+- "System failure. Try again later."
+
+## Logging
+
+All errors should be logged with:
+- Error type
+- User input that caused the error
+- Timestamp
+- Correlation ID (for debugging)
+- Recovery action taken
+
+This helps improve the system over time.

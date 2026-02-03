@@ -1,0 +1,7 @@
+# Vercel Deployment Token
+# Generated: 2026-02-03
+# DO NOT commit this file to git
+
+VERCEL_TOKEN=5Yu5e59QK9Revb1MjjINryAS
+VERCEL_ORG_ID=your-org-id
+VERCEL_PROJECT_ID=your-project-id

@@ -3,6 +3,15 @@
   "outputDirectory": ".next",
   "framework": "nextjs",
   "installCommand": "npm install",
+  "regions": ["iad1"],
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://ammaraak-todo-app-backend.hf.space"
+  },
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_API_URL": "https://ammaraak-todo-app-backend.hf.space"
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",
@@ -13,7 +22,7 @@
         },
         {
           "key": "X-Frame-Options",
-          "value": "DENY"
+          "value": "SAMEORIGIN"
         },
         {
           "key": "X-XSS-Protection",
@@ -25,12 +34,24 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "camera=(), microphone=(), geolocation=()"
+          "value": "camera=(self), microphone=(self), geolocation=(self)"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.vercel.app https://*.hf.space https://huggingface.co; img-src 'self' data: https: https://*.cloudinary.com; connect-src 'self' https://*.hf.space https://*.vercel.app https://huggingface.co;"
         }
       ]
     }
   ],
   "rewrites": [
+    {
+      "source": "/api/health",
+      "destination": "/api/health"
+    },
     {
       "source": "/api/:path*",
       "destination": "https://ammaraak-todo-app-backend.hf.space/api/:path*"

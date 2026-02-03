@@ -1,0 +1,212 @@
+# Kafka Event Schemas
+
+**Version**: 5.0.0
+**Format**: JSON Schema
+**Serialization**: JSON
+
+## Event Envelope (All Events)
+
+```json
+{
+  "event_id": "uuid",
+  "event_type": "string",
+  "topic_name": "string",
+  "correlation_id": "uuid",
+  "timestamp": "ISO 8601 datetime",
+  "source_service": "string",
+  "payload": { /* event-specific payload */ }
+}
+```
+
+## Topic: task-events
+
+### Event: task.created
+
+```json
+{
+  "event_type": "task.created",
+  "payload": {
+    "task_id": "uuid",
+    "user_id": "uuid",
+    "title": "string",
+    "due_date": "ISO 8601 datetime (optional)",
+    "priority": "low|medium|high (optional)",
+    "tags": ["string"],
+    "recurrence_rule": { /* optional */ },
+    "created_at": "ISO 8601 datetime"
+  }
+}
+```
+
+### Event: task.updated
+
+```json
+{
+  "event_type": "task.updated",
+  "payload": {
+    "task_id": "uuid",
+    "user_id": "uuid",
+    "changes": {
+      "field": "value",
+      "due_date": "new_value"
+    },
+    "updated_at": "ISO 8601 datetime"
+  }
+}
+```
+
+### Event: task.completed
+
+```json
+{
+  "event_type": "task.completed",
+  "payload": {
+    "task_id": "uuid",
+    "user_id": "uuid",
+    "title": "string",
+    "recurrence_rule": { /* if recurring */ },
+    "completed_at": "ISO 8601 datetime"
+  }
+}
+```
+
+### Event: task.deleted
+
+```json
+{
+  "event_type": "task.deleted",
+  "payload": {
+    "task_id": "uuid",
+    "user_id": "uuid",
+    "deleted_at": "ISO 8601 datetime"
+  }
+}
+```
+
+## Topic: reminders
+
+### Event: reminder.triggered
+
+```json
+{
+  "event_type": "reminder.triggered",
+  "payload": {
+    "reminder_id": "uuid",
+    "task_id": "uuid",
+    "user_id": "uuid",
+    "task_title": "string",
+    "due_date": "ISO 8601 datetime",
+    "trigger_time": "ISO 8601 datetime",
+    "delivery_method": "email|push",
+    "destination": "string"
+  }
+}
+```
+
+### Event: reminder.sent
+
+```json
+{
+  "event_type": "reminder.sent",
+  "payload": {
+    "reminder_id": "uuid",
+    "task_id": "uuid",
+    "sent_at": "ISO 8601 datetime",
+    "delivery_method": "email|push"
+  }
+}
+```
+
+### Event: reminder.failed
+
+```json
+{
+  "event_type": "reminder.failed",
+  "payload": {
+    "reminder_id": "uuid",
+    "task_id": "uuid",
+    "error_reason": "string",
+    "retry_count": "integer",
+    "failed_at": "ISO 8601 datetime"
+  }
+}
+```
+
+## Topic: task-updates
+
+### Event: task.update.broadcast
+
+```json
+{
+  "event_type": "task.update.broadcast",
+  "payload": {
+    "task_id": "uuid",
+    "update_type": "created|updated|completed|deleted",
+    "data": { /* full task object */ },
+    "timestamp": "ISO 8601 datetime"
+  }
+}
+```
+
+## Topic: audit-events
+
+### Event: audit.logged
+
+```json
+{
+  "event_type": "audit.logged",
+  "payload": {
+    "entity_type": "Task|Reminder|User",
+    "entity_id": "uuid",
+    "action": "CREATE|UPDATE|DELETE",
+    "actor_type": "user|system|service",
+    "actor_id": "string",
+    "old_values": { /* optional */ },
+    "new_values": { /* optional */ },
+    "timestamp": "ISO 8601 datetime",
+    "correlation_id": "uuid"
+  }
+}
+```
+
+## Topic: recurring-events
+
+### Event: recurring.generated
+
+```json
+{
+  "event_type": "recurring.generated",
+  "payload": {
+    "source_task_id": "uuid",
+    "new_task_id": "uuid",
+    "user_id": "uuid",
+    "title": "string",
+    "recurrence_rule": { /* pattern, interval */ },
+    "next_due_date": "ISO 8601 datetime",
+    "generated_at": "ISO 8601 datetime"
+  }
+}
+```
+
+## Event Guarantees
+
+- **Ordering**: Events within a partition are ordered
+- **Delivery**: At-least-once (idempotent handlers required)
+- **Retention**: 7 days (configurable per topic)
+- **Schema Version**: All events include `schema_version: "5.0.0"`
+
+## Error Handling
+
+### Dead Letter Queue
+
+Failed events are sent to `{topic}-dlq` with error metadata:
+
+```json
+{
+  "original_event": { /* event envelope */ },
+  "error": "string",
+  "stack_trace": "string",
+  "failed_at": "ISO 8601 datetime",
+  "retry_count": "integer"
+}
+```

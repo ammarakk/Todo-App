@@ -1,29 +1,80 @@
-# Todo Backend (Phase III)
+---
+title: Todo Backend API
+emoji: 🔧
+colorFrom: green
+colorTo: blue
+sdk: docker
+pinned: false
+license: mit
+---
 
-## ⚠️ READ-ONLY - PHASE IV PROTECTION
+# Todo Backend API - Phase 4
 
-**This directory is a READ-ONLY copy of Phase III backend code.**
+## FastAPI Backend Service with Qwen AI Integration
 
-## Constitution Reference
+### Features
+- ✅ JWT Authentication
+- ✅ Todo CRUD operations
+- ✅ Qwen AI chatbot integration
+- ✅ PostgreSQL database
+- ✅ MCP (Model Context Protocol) tools
+- ✅ Email notifications
+- ✅ Reminder system
 
-Per Phase IV Principle VII: **Immutable Phase III Business Logic**
+### API Endpoints
 
-## What CAN Be Modified
+**Health Check:**
+```bash
+GET /health
+```
 
-Environment variable configurations (via `.env` files):
-- DATABASE_URL - PostgreSQL connection string (injected by Kubernetes)
-- JWT_SECRET - JWT signing key (injected via Kubernetes Secrets)
-- OLLAMA_HOST - Ollama service endpoint (for chatbot integration)
-- PORT - Server port (default: 8000)
+**Authentication:**
+```bash
+POST /api/auth/register
+POST /api/auth/login
+POST /api/auth/verify-token
+```
 
-## What CANNOT Be Modified
+**Todos:**
+```bash
+GET    /api/todos
+POST   /api/todos
+GET    /api/todos/{id}
+PUT    /api/todos/{id}
+DELETE /api/todos/{id}
+```
 
-- ❌ Business logic in src/
-- ❌ Database models or schemas
-- ❌ API endpoints or routes
-- ❌ Authentication logic
-- ❌ MCP tools or integrations
+**Chat:**
+```bash
+POST /api/chat
+Content-Type: application/json
 
-## Original Location
+{
+  "message": "add a todo to buy milk",
+  "user_id": 1
+}
+```
 
-This code was copied from: phase-3/backend/
+### Environment Variables (Required Secrets)
+- `DATABASE_URL` - PostgreSQL connection string
+- `QWEN_API_KEY` - Qwen AI API key
+- `JWT_SECRET` - JWT signing secret
+
+### Tech Stack
+- FastAPI (Python web framework)
+- SQLAlchemy (ORM)
+- Alembic (Database migrations)
+- Qwen API (AI integration)
+- PostgreSQL (Database)
+- Docker (Containerization)
+
+### Deployed on
+- Backend: https://ammaraak-todo-api.hf.space
+- Chatbot: https://ammaraak-todo-app-backend.hf.space
+- Database: Neon PostgreSQL
+
+### Author
+Ammar Ak - Phase 4 Infrastructure Project
+
+---
+**Note:** This is the backend API service. For the chatbot service, visit the chatbot Space.

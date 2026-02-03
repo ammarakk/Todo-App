@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  redpanda:
+    image: redpandadata/redpanda:v23.2.10
+    container_name: redpanda
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp=1
+      - --memory=1G
+      - --reserve-memory=0M
+      - --node-id=0
+      - --check=false
+      - --kafka-addr=PLAINTEXT://0.0.0.0:9092,OUTSIDE://0.0.0.0:9093
+      - --advertise-kafka-addr=PLAINTEXT://redpanda:9092,OUTSIDE://localhost:9093
+      - --topic-auto-creation-enabled=true
+    ports:
+      - "9092:9092"   # Kafka internal
+      - "9093:9093"   # Kafka external
+      - "8081:8081"   # Redpanda Console (optional)
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9644/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - redpanda_network
+
+networks:
+  redpanda_network:
+    driver: bridge

@@ -1,0 +1,316 @@
+openapi: 3.0.0
+info:
+  title: Todo Backend API (Phase 5)
+  version: 5.0.0
+  description: |
+    FastAPI backend for AI-powered todo system with event-driven microservices.
+
+    **Phase V Enhancements**:
+    - AI orchestrator flow for chatbot interactions
+    - Event publishing to Kafka via Dapr
+    - Skill agent integration for intent extraction
+
+servers:
+  - url: http://localhost:8000
+    description: Local development (Minikube port-forward)
+  - url: https://backend.todo-app.example.com
+    description: Production (cloud deployment)
+
+paths:
+  /health:
+    get:
+      summary: Liveness probe
+      operationId: checkHealth
+      responses:
+        '200':
+          description: Service is healthy
+
+  /ready:
+    get:
+      summary: Readiness probe
+      operationId: checkReady
+      responses:
+        '200':
+          description: Service is ready to accept traffic
+        '503':
+          description: Service not ready (DB/Dapr/Ollama unavailable)
+
+  /tasks:
+    get:
+      summary: List all tasks
+      operationId: listTasks
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, completed, deleted]
+        - name: priority
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high]
+        - name: tags
+          in: query
+          schema:
+            type: string
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [due_date, created_at, priority]
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+
+    post:
+      summary: Create a new task
+      operationId: createTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskCreate'
+      responses:
+        '200':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: Validation error
+
+  /tasks/{task_id}:
+    get:
+      summary: Get task by ID
+      operationId: getTask
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found
+
+    patch:
+      summary: Update task
+      operationId: updateTask
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskUpdate'
+      responses:
+        '200':
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+    delete:
+      summary: Delete task (soft delete)
+      operationId: deleteTask
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Task deleted
+
+  /tasks/{task_id}/complete:
+    post:
+      summary: Mark task as completed
+      operationId: completeTask
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Task completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+  /chat/command:
+    post:
+      summary: Process chat command via AI orchestrator
+      operationId: processChatCommand
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_input, conversation_id]
+              properties:
+                user_input:
+                  type: string
+                  example: "Create a task to buy milk tomorrow at 5pm"
+                conversation_id:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: AI response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+                    example: "I've created a task 'buy milk' due tomorrow at 5pm."
+                  intent_detected:
+                    type: string
+                    example: "create_task"
+                  skill_agent_used:
+                    type: string
+                    example: "TaskAgent"
+                  confidence_score:
+                    type: number
+                    format: float
+                    example: 0.95
+                  task_created:
+                    type: object
+                    nullable: true
+                    properties:
+                      task_id:
+                        type: string
+                      title:
+                        type: string
+
+components:
+  schemas:
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        due_date:
+          type: string
+          format: date-time
+          nullable: true
+        priority:
+          type: string
+          enum: [low, medium, high]
+          nullable: true
+        tags:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [active, completed, deleted]
+        recurrence_rule:
+          type: object
+          nullable: true
+          properties:
+            pattern:
+              type: string
+              enum: [daily, weekly, monthly, custom]
+            interval:
+              type: integer
+        reminder_config:
+          type: object
+          nullable: true
+          properties:
+            lead_time:
+              type: string
+              example: "15m"
+            delivery_method:
+              type: string
+              enum: [email, push]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    TaskCreate:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+        description:
+          type: string
+        due_date:
+          type: string
+          format: date-time
+        priority:
+          type: string
+          enum: [low, medium, high]
+        tags:
+          type: array
+          items:
+            type: string
+        recurrence_rule:
+          $ref: '#/components/schemas/Task/properties/recurrence_rule'
+        reminder_config:
+          $ref: '#/components/schemas/Task/properties/reminder_config'
+
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 500
+        description:
+          type: string
+        due_date:
+          type: string
+          format: date-time
+        priority:
+          type: string
+          enum: [low, medium, high]
+        tags:
+          type: array
+          items:
+            type: string
+        reminder_config:
+          $ref: '#/components/schemas/Task/properties/reminder_config'

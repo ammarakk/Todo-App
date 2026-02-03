@@ -1,0 +1,276 @@
+# Dapr Component Configurations
+
+**Version**: 1.12
+**Namespace**: default
+
+## Component: Pub/Sub (Kafka)
+
+**File**: `dapr/components/pubsub.yaml`
+
+```yaml
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: kafka-pubsub
+  namespace: default
+spec:
+  type: pubsub.kafka
+  version: v1
+  metadata:
+  - name: brokers
+    value: "kafka:9092"  # Redpanda local, managed Kafka cloud
+  - name: consumerGroup
+    value: "todo-service"
+  - name: authRequired
+    value: "false"  # For local dev
+  - name: maxMessageBytes
+    value: "1024"  # 1MB max message size
+  - name: consumeRetryInterval
+    value: "200ms"  # Retry interval for failed consumption
+  - name: sessionTimeout
+    value: "10s"
+```
+
+**Cloud Variant** (production):
+
+```yaml
+metadata:
+  - name: brokers
+    value: "redpanda-cloud.redpanda.com:9093"
+  - name: authRequired
+    value: "true"
+  - name: sasl
+    value: "plaintext"
+  - name: saslUsername
+    secretKeyRef:
+      name: kafka-credentials
+      key: username
+  - name: saslPassword
+    secretKeyRef:
+      name: kafka-credentials
+      key: password
+```
+
+---
+
+## Component: State Store (PostgreSQL)
+
+**File**: `dapr/components/statestore.yaml`
+
+```yaml
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: statestore
+  namespace: default
+spec:
+  type: state.postgresql
+  version: v1
+  metadata:
+  - name: connectionString
+    secretKeyRef:
+      name: db-credentials
+      key: connectionstring
+  - name: tableName
+    value: "dapr_state"
+  - name: keyPrefix
+    value: "none"  # We use full keys like "conversation:{id}"
+  - name: ttlInSeconds
+    value: "2592000"  # 30 days
+```
+
+**State Operations**:
+
+```python
+# Save conversation state
+await dapr.save_state(
+    store_name="statestore",
+    key=f"conversation:{conversation_id}",
+    value=json.dumps(messages),
+    ttl_seconds=2592000
+)
+
+# Load conversation state
+state = await dapr.get_state(
+    store_name="statestore",
+    key=f"conversation:{conversation_id}"
+)
+```
+
+---
+
+## Component: Secret Store (Kubernetes)
+
+**File**: `dapr/components/secrets.yaml`
+
+```yaml
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: kubernetes-secrets
+  namespace: default
+spec:
+  type: secretstores.kubernetes
+  version: v1
+  metadata:
+  - name: kubeconfig
+    value: "/path/to/kubeconfig"  # Optional for in-cluster
+```
+
+**Secret Usage**:
+
+```python
+# Fetch secret
+secret = await dapr.get_secret(
+    store_name="kubernetes-secrets",
+    key="db-credentials"
+)
+# Returns: {"username": "...", "password": "...", "host": "..."}
+```
+
+**Required Secrets**:
+
+```bash
+# Database credentials
+kubectl create secret generic db-credentials \
+  --from-literal=username=postgres \
+  --from-literal=password=secretpass \
+  --from-literal=host=neon.db \
+  --from-literal=connectionstring="host=neon.db user=postgres password=secretpass dbname=todo"
+
+# Email service
+kubectl create secret generic email-credentials \
+  --from-literal=api-key=SG.xxx \
+  --from-literal=from-email=noreply@todo-app.com
+
+# Ollama URL (if remote)
+kubectl create secret generic ollama-config \
+  --from-literal url=http://ollama:11434
+
+# Kafka credentials (production only)
+kubectl create secret generic kafka-credentials \
+  --from-literal=username=admin \
+  --from-literal=password=secretpass
+```
+
+---
+
+## Component: Service Invocation
+
+**Configuration**: Built-in to Dapr sidecar (no component config needed)
+
+**Invocation Examples**:
+
+```python
+# Frontend → Backend
+response = requests.post(
+    "http://localhost:3500/v1.0/invoke/backend-app/method/tasks",
+    json={"title": "Buy milk"}
+)
+
+# Backend → Chatbot
+response = requests.post(
+    "http://localhost:3500/v1.0/invoke/chatbot-app/method/chat/process",
+    json={"user_input": "Create task", "conversation_id": "..."}
+)
+```
+
+---
+
+## Subscriptions
+
+**File**: `dapr/subscriptions/task-events.yaml`
+
+```yaml
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: task-events-subscription
+spec:
+  topic: task-events
+  route: /events/task-events  # HTTP endpoint in service
+  pubsubname: kafka-pubsub
+```
+
+**File**: `dapr/subscriptions/reminders.yaml`
+
+```yaml
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: reminders-subscription
+spec:
+  topic: reminders
+  route: /events/reminders
+  pubsubname: kafka-pubsub
+```
+
+---
+
+## Configuration
+
+**File**: `dapr/configuration/config.yaml`
+
+```yaml
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: app-config
+spec:
+  tracing:
+    samplingRate: "1"  # 100% tracing for dev
+    zipkin:
+      endpointAddress: "http://zipkin:9411/api/v2/spans"
+  metrics:
+    enabled: true
+    rules:
+      - name: http-server
+        labels:
+          app: "myapp"
+```
+
+---
+
+## Sidecar Configuration
+
+**Frontend Pod**:
+
+```yaml
+apiVersion: dapr.io/v1alpha1
+kind: DaprBinding
+metadata:
+  name: frontend-dapr
+spec:
+  version: 1.12
+  appPort: 3000
+  httpPort: 3500
+  grpcPort: 50001
+  config: app-config
+  components:
+    - name: kafka-pubsub
+      type: pubsub.kafka
+    - name: statestore
+      type: state.postgresql
+```
+
+**Backend Pod**:
+
+```yaml
+apiVersion: dapr.io/v1alpha1
+kind: DaprBinding
+metadata:
+  name: backend-dapr
+spec:
+  version: 1.12
+  appPort: 8000
+  httpPort: 3500
+  grpcPort: 50001
+  config: app-config
+  components:
+    - name: kafka-pubsub
+      type: pubsub.kafka
+    - name: statestore
+      type: state.postgresql
+    - name: kubernetes-secrets
+      type: secretstores.kubernetes
+```

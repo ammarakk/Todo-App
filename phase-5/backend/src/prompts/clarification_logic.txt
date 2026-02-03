@@ -1,0 +1,92 @@
+# Clarification Logic Prompt
+
+## Purpose
+
+Define when and how to ask users for missing or unclear information during task operations.
+
+## Missing Required Fields
+
+Ask for clarification when:
+
+### Task Creation
+- **Missing Title**: "What would you like to call this task?"
+- **Ambiguous Title**: "Could you provide more details about what this task involves?"
+- **Missing Due Date** (if time-sensitive): "When is this task due?"
+- **Missing Priority** (for important tasks): "How important is this task? (low, medium, high, urgent)"
+
+### Task Updates/Deletions
+- **Missing Task ID**: "Which task would you like to update? You can say the task title or ID."
+- **Multiple Tasks Match**: "I found multiple tasks matching '{title}'. Which one?"
+  - List matching tasks with IDs
+  - Ask user to specify
+
+### Reminders
+- **Missing Time**: "When would you like to be reminded?"
+- **Missing Contact Info**: "How should I remind you? (email address or phone number)"
+
+## Ambiguity Detection
+
+### Time Ambiguity
+- "later" → Ask: "Later today, later this week, or later this month?"
+- "soon" → Ask: "How soon? In a few hours, tomorrow, or this week?"
+- "next week" → Ask: "Which day next week?"
+
+### Task Reference Ambiguity
+- "that task" → Ask: "Which task are you referring to?"
+- "the meeting task" → Ask: "I see multiple tasks with 'meeting'. Which one?"
+
+### Priority Ambiguity
+- "important" → Ask: "Is this high priority or urgent?"
+
+## Suggested Responses
+
+### Offering Defaults
+When a field has a sensible default:
+- "I'll set the priority to medium. Would you like to change it?"
+- "No due date specified. I'll mark it as due anytime. Add a deadline?"
+
+### Providing Context
+After creating a task:
+- "I've created '{title}' with high priority. Would you like to set a reminder?"
+- "Task created! It's due tomorrow. Need a reminder an hour before?"
+
+### Smart Suggestions
+Based on context:
+- "You have 3 tasks due tomorrow. Would you like me to list them?"
+- "This task is similar to '{existing_task}'. Merge them?"
+
+## Decision Tree
+
+```
+User Input → Extract Data → Validate Data
+                              ↓
+                         All Required Fields Present?
+                              ↓
+                    ┌─────────┴─────────┐
+                   YES                   NO
+                    ↓                     ↓
+               Proceed              Ask for Missing Info
+                    ↓                     ↓
+               Execute              Wait for Response
+                    ↓                     ↓
+               Confirm              Re-extract & Re-validate
+```
+
+## Examples
+
+**Example 1: Missing Due Date**
+User: "Remind me to call mom"
+Assistant: "When would you like to be reminded to call mom?"
+
+**Example 2: Multiple Matches**
+User: "Delete the meeting task"
+Assistant: "I found 3 tasks with 'meeting':
+1. 'Prepare for team meeting' (ID: abc-123)
+2. 'Weekly standup meeting' (ID: def-456)
+3. 'Client meeting prep' (ID: ghi-789)
+
+Which one would you like to delete?"
+
+**Example 3: Ambiguous Time**
+User: "Remind me about the review tomorrow afternoon"
+Assistant: "What time tomorrow afternoon would you like the reminder?"
