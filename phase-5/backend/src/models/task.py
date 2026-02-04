@@ -40,6 +40,24 @@ class Task(BaseModel):
     # Relationships
     reminder: Mapped[Optional["Reminder"]] = relationship("Reminder", back_populates="task", uselist=False)
 
+    def to_dict(self) -> dict:
+        """Convert task to dictionary for JSON serialization."""
+        return {
+            "id": str(self.id),
+            "user_id": str(self.user_id),
+            "title": self.title,
+            "description": self.description,
+            "due_date": self.due_date.isoformat() if self.due_date else None,
+            "priority": self.priority,
+            "tags": self.tags or [],
+            "status": self.status,
+            "reminder_config": self.reminder_config,
+            "recurrence_rule": self.recurrence_rule,
+            "ai_metadata": self.ai_metadata,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
+
     __table_args__ = (
         CheckConstraint(
             "priority IN ('low', 'medium', 'high', 'urgent')",

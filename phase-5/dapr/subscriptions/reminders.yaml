@@ -1,0 +1,17 @@
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: reminder-subscription
+  namespace: default
+spec:
+  topic: reminders
+  route: /reminders
+  pubsubname: kafka-pubsub
+  scopes:
+    - notification-service
+  metadata:
+    # Retry policy for failed deliveries
+    retryCount: 3
+    retryInterval: 5s
+    # Dead letter topic for failed messages after retries
+    deadLetterTopic: reminders-dlt

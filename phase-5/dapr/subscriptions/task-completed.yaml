@@ -1,0 +1,19 @@
+apiVersion: dapr.io/v1alpha1
+kind: Subscription
+metadata:
+  name: task-completed-subscription
+  namespace: default
+spec:
+  topic: task-events
+  route: /task-completed
+  pubsubname: kafka-pubsub
+  scopes:
+    - backend-service
+  metadata:
+    # Filter for only task.completed events
+    # This is handled in the endpoint logic
+    # Retry policy for failed deliveries
+    retryCount: 3
+    retryInterval: 5s
+    # Dead letter topic for failed messages after retries
+    deadLetterTopic: task-events-dlt

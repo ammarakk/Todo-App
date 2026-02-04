@@ -1,0 +1,242 @@
+# Prometheus Alerting Rules - Phase 5
+# Production alert configuration
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+  namespace: monitoring
+data:
+  alerts.yml: |
+    groups:
+      # API Alerts
+      - name: api_alerts
+        interval: 30s
+        rules:
+          - alert: HighErrorRate
+            expr: |
+              rate(http_requests_total{status="error"}[5m]) /
+              rate(http_requests_total[5m]) > 0.05
+            for: 5m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "High API error rate on {{ $labels.endpoint }}"
+              description: "Error rate is {{ $value | humanizePercentage }} for endpoint {{ $labels.endpoint }}"
+
+          - alert: CriticalErrorRate
+            expr: |
+              rate(http_requests_total{status="error"}[5m]) /
+              rate(http_requests_total[5m]) > 0.15
+            for: 2m
+            labels:
+              severity: critical
+              team: backend
+            annotations:
+              summary: "Critical API error rate on {{ $labels.endpoint }}"
+              description: "Error rate is {{ $value | humanizePercentage }} for endpoint {{ $labels.endpoint }}"
+
+          - alert: HighLatency
+            expr: |
+              histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+            for: 10m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "High API latency on {{ $labels.endpoint }}"
+              description: "P95 latency is {{ $value }}s for endpoint {{ $labels.endpoint }}"
+
+          - alert: CriticalLatency
+            expr: |
+              histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 3
+            for: 5m
+            labels:
+              severity: critical
+              team: backend
+            annotations:
+              summary: "Critical API latency on {{ $labels.endpoint }}"
+              description: "P95 latency is {{ $value }}s for endpoint {{ $labels.endpoint }}"
+
+      # Database Alerts
+      - name: database_alerts
+        interval: 30s
+        rules:
+          - alert: DatabaseConnectionHigh
+            expr: db_connections_active > 80
+            for: 10m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "High database connection count"
+              description: "Database has {{ $value }} active connections"
+
+          - alert: DatabaseQuerySlow
+            expr: |
+              histogram_quantile(0.95, rate(db_query_duration_seconds_bucket[5m])) > 0.5
+            for: 10m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "Slow database queries"
+              description: "P95 query latency is {{ $value }}s"
+
+      # Kafka Alerts
+      - name: kafka_alerts
+        interval: 30s
+        rules:
+          - alert: KafkaPublishErrors
+            expr: |
+              rate(kafka_messages_published_total{status="error"}[5m]) > 0
+            for: 5m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "Kafka publish errors detected"
+              description: "Failed to publish {{ $value }} msgs/sec to topic {{ $labels.topic }}"
+
+          - alert: KafkaMessageLag
+            expr: |
+              kafka_consumergroup_lag > 1000
+            for: 15m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "High Kafka consumer lag"
+              description: "Consumer group {{ $labels.consumergroup }} has lag of {{ $value }} messages"
+
+      # Service Health Alerts
+      - name: service_health
+        interval: 15s
+        rules:
+          - alert: ServiceDown
+            expr: up == 0
+            for: 2m
+            labels:
+              severity: critical
+              team: backend
+            annotations:
+              summary: "Service is down: {{ $labels.job }}"
+              description: "Service {{ $labels.job }} on {{ $labels.instance }} has been down for more than 2 minutes"
+
+          - alert: PodNotReady
+            expr: |
+              kube_pod_status_phase{phase="Running"} == 0
+            for: 10m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "Pod not ready: {{ $labels.pod }}"
+              description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is not ready"
+
+      # AI/ML Alerts
+      - name: ai_alerts
+        interval: 30s
+        rules:
+          - alert: LowAIConfidence
+            expr: |
+              avg(ai_confidence_score) < 0.6
+            for: 15m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "Low AI confidence scores"
+              description: "Average AI confidence is {{ $value | humanizePercentage }}"
+
+          - alert: HighAIErrorRate
+            expr: |
+              rate(ai_requests_total{status="error"}[5m]) /
+              rate(ai_requests_total[5m]) > 0.2
+            for: 10m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "High AI request error rate"
+              description: "AI error rate is {{ $value | humanizePercentage }}"
+
+      # WebSocket Alerts
+      - name: websocket_alerts
+        interval: 30s
+        rules:
+          - alert: LowWebSocketConnections
+            expr: |
+              sum(websocket_connections_active) < 10
+            for: 1h
+            labels:
+              severity: info
+              team: backend
+            annotations:
+              summary: "Low WebSocket connection count"
+              description: "Only {{ $value }} active WebSocket connections"
+
+      # Resource Alerts
+      - name: resource_alerts
+        interval: 30s
+        rules:
+          - alert: HighMemoryUsage
+            expr: |
+              (container_memory_usage_bytes / container_spec_memory_limit_bytes) > 0.9
+            for: 10m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "High memory usage on {{ $labels.pod }}"
+              description: "Memory usage is {{ $value | humanizePercentage }}"
+
+          - alert: HighCPUUsage
+            expr: |
+              (rate(container_cpu_usage_seconds_total[5m]) / container_spec_cpu_quota) > 0.9
+            for: 10m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "High CPU usage on {{ $labels.pod }}"
+              description: "CPU usage is {{ $value | humanizePercentage }}"
+
+          - alert: PodCrashLooping
+            expr: |
+              rate(kube_pod_container_status_restarts_total[1h]) > 0
+            for: 15m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "Pod {{ $labels.pod }} is crash looping"
+              description: "Pod has restarted {{ $value }} times in the last hour"
+
+      # Business Metrics Alerts
+      - name: business_alerts
+        interval: 60s
+        rules:
+          - alert: LowTaskCreationRate
+            expr: |
+              rate(tasks_created_total[1h]) < 0.01
+            for: 2h
+            labels:
+              severity: info
+              team: product
+            annotations:
+              summary: "Low task creation rate"
+              description: "Task creation rate is only {{ $value }} per second"
+
+          - alert: HighReminderFailureRate
+            expr: |
+              rate(reminders_sent_total{status="error"}[5m]) /
+              rate(reminders_sent_total[5m]) > 0.1
+            for: 10m
+            labels:
+              severity: warning
+              team: backend
+            annotations:
+              summary: "High reminder failure rate"
+              description: "{{ $value | humanizePercentage }} of reminders are failing"

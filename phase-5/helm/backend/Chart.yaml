@@ -1,0 +1,15 @@
+apiVersion: v2
+name: backend
+description: A Helm chart for Phase 5 Todo Backend - FastAPI with Dapr sidecar
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - todo
+  - backend
+  - fastapi
+  - dapr
+  - kafka
+maintainers:
+  - name: Todo App Team
+    email: team@todo-app.local

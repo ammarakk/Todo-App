@@ -1,0 +1,120 @@
+# Certificate Manager for TLS Certificates
+# Uses cert-manager for automatic TLS certificate management
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cert-manager
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+
+---
+# Install cert-manager (if not already installed)
+# This is a ClusterIssuer for Let's Encrypt
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  namespace: phase-5
+spec:
+  acme:
+    # You must replace this email address with your own.
+    # Let's Encrypt will use this to contact you about expiring
+    # certificates, and issues related to your account.
+    email: admin@yourdomain.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
+      selector:
+        dnsNames:
+        - 'todo-app.yourdomain.com'
+        - 'api.todo-app.yourdomain.com'
+
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+  namespace: phase-5
+spec:
+  acme:
+    email: admin@yourdomain.com
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-staging
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
+      selector:
+        dnsNames:
+        - 'todo-app.yourdomain.com'
+        - 'api.todo-app.yourdomain.com'
+
+---
+# Certificate for the backend API
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: backend-api-tls
+  namespace: phase-5
+spec:
+  secretName: backend-api-tls-secret
+  duration: 2160h # 90 days
+  renewBefore: 360h # 15 days before expiry
+  subjectOrganizations:
+  - "Todo App Inc"
+  subjectCountries:
+  - "US"
+  dnsNames:
+  - api.todo-app.yourdomain.com
+  - todo-api.yourdomain.com
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+    group: cert-manager.io
+
+---
+# Certificate for the frontend
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: frontend-tls
+  namespace: phase-5
+spec:
+  secretName: frontend-tls-secret
+  duration: 2160h # 90 days
+  renewBefore: 360h # 15 days before expiry
+  subjectOrganizations:
+  - "Todo App Inc"
+  subjectCountries:
+  - "US"
+  dnsNames:
+  - todo-app.yourdomain.com
+  - www.todo-app.yourdomain.com
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+    group: cert-manager.io
+
+---
+# Certificate for WebSocket connections
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: websocket-tls
+  namespace: phase-5
+spec:
+  secretName: websocket-tls-secret
+  duration: 2160h # 90 days
+  renewBefore: 360h # 15 days before expiry
+  dnsNames:
+  - ws.todo-app.yourdomain.com
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+    group: cert-manager.io

@@ -1,0 +1,143 @@
+# Automated Database Backup CronJob
+# Runs daily backups at 2 AM UTC
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backup-script
+  namespace: phase-5
+data:
+  backup.sh: |
+    #!/bin/bash
+    set -e
+
+    NAMESPACE="phase-5"
+    DB_DEPLOYMENT="postgres"
+    S3_BUCKET="${S3_BUCKET}"
+    S3_ENDPOINT="${S3_ENDPOINT:-https://s3.amazonaws.com}"
+    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    BACKUP_NAME="todo-app-backup-${TIMESTAMP}"
+
+    echo "Starting backup: ${BACKUP_NAME}"
+
+    # Get PostgreSQL pod
+    DB_POD=$(kubectl get pod -n ${NAMESPACE} -l app=${DB_DEPLOYMENT} -o jsonpath='{.items[0].metadata.name}')
+
+    if [ -z "${DB_POD}" ]; then
+      echo "Error: PostgreSQL pod not found"
+      exit 1
+    fi
+
+    # Create backup
+    kubectl exec -n ${NAMESPACE} ${DB_POD} -- pg_dumpall -U postgres | gzip > /tmp/${BACKUP_NAME}.sql.gz
+
+    # Upload to S3
+    aws s3 cp /tmp/${BACKUP_NAME}.sql.gz ${S3_BUCKET}/snapshots/ --endpoint-url ${S3_ENDPOINT}
+
+    # Cleanup old backups (keep last 30 days)
+    aws s3 ls ${S3_BUCKET}/snapshots/ --endpoint-url ${S3_ENDPOINT} | \
+      awk '{print $4}' | \
+      grep 'todo-app-backup-' | \
+      head -n -30 | \
+      xargs -I {} aws s3 rm ${S3_BUCKET}/snapshots/{} --endpoint-url ${S3_ENDPOINT}
+
+    echo "Backup complete: ${BACKUP_NAME}"
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: database-backup
+  namespace: phase-5
+spec:
+  schedule: "0 2 * * *" # Run daily at 2 AM UTC
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: backup-service-account
+          restartPolicy: OnFailure
+          containers:
+          - name: backup
+            image: amazon/aws-cli:latest
+            command:
+            - /bin/bash
+            - /scripts/backup.sh
+            volumeMounts:
+            - name: backup-script
+              mountPath: /scripts
+            env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: access-key-id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: secret-access-key
+            - name: S3_BUCKET
+              value: "s3://todo-app-backups"
+            - name: S3_ENDPOINT
+              value: "https://s3.amazonaws.com"
+            resources:
+              requests:
+                cpu: 100m
+                memory: 128Mi
+              limits:
+                cpu: 500m
+                memory: 512Mi
+          volumes:
+          - name: backup-script
+            configMap:
+              name: backup-script
+              defaultMode: 0755
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backup-service-account
+  namespace: phase-5
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: backup-role
+  namespace: phase-5
+rules:
+- apiGroups: [""]
+  resources: ["pods", "pods/exec"]
+  verbs: ["get", "list", "create"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: backup-role-binding
+  namespace: phase-5
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: backup-role
+subjects:
+- kind: ServiceAccount
+  name: backup-service-account
+  namespace: phase-5
+
+---
+# Secret for AWS credentials (create with: kubectl create secret generic aws-credentials --from-literal=access-key-id=XXX --from-literal=secret-access-key=YYY)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aws-credentials
+  namespace: phase-5
+type: Opaque
+stringData:
+  access-key-id: "YOUR_AWS_ACCESS_KEY_ID"
+  secret-access-key: "YOUR_AWS_SECRET_ACCESS_KEY"

@@ -1,0 +1,103 @@
+Error Response Guidelines:
+
+When errors occur, provide clear, actionable feedback to users.
+
+### 1. Database Errors
+
+**Connection Failed:**
+- "I'm having trouble connecting to the database. Please try again in a moment."
+- "Storage service unavailable. Your task wasn't saved. Please retry."
+
+**Query Failed:**
+- "I couldn't retrieve your tasks. Please try again."
+- "Something went wrong loading your data. Let's try that again."
+
+**Transaction Failed:**
+- "Your task was created but I couldn't send the reminder. Please check manually."
+- "Partial update completed. Some changes may not have saved."
+
+### 2. AI Processing Errors
+
+**Low Confidence (< 70%):**
+- "I think you want to {action}, but I'm only {confidence}% sure. Is that right?"
+- "I'm not completely sure I understood. You said: '{input}'. Did you mean to {action}?"
+
+**Extraction Failed:**
+- "I couldn't understand the date format. Please try 'tomorrow at 5pm' format."
+- "I'm not sure what priority you meant. Options are: low, medium, high."
+
+**Intent Unknown:**
+- "I'm not sure what you'd like to do. You said: '{input}'."
+- "Could you rephrase that? I can help you create, update, complete, or list tasks."
+
+### 3. Service Unavailable
+
+**Dapr Down:**
+- "Service temporarily unavailable. Please try again in a moment."
+- "I can't reach the event bus right now. Please retry."
+
+**Ollama Down:**
+- "AI service unavailable. Using basic mode instead."
+- "Smart features are offline. Functionality may be limited."
+
+**Kafka Down:**
+- "Event streaming offline. Tasks will save but won't trigger notifications."
+- "Message service unavailable. Reminders may be delayed."
+
+### 4. Validation Errors
+
+**Missing Required Field:**
+- "Sorry, {field} cannot be empty."
+- "I need a {field} to create this task."
+
+**Invalid Format:**
+- "That doesn't look like a valid date. Try 'tomorrow at 5pm' format."
+- "Priority must be: low, medium, or high."
+
+**Constraint Violation:**
+- "Task title too long (max 500 characters)."
+- "Due date must be in the future."
+
+### 5. User Errors
+
+**Task Not Found:**
+- "I couldn't find that task. Would you like me to list your tasks?"
+- "Task {id} doesn't exist or was deleted."
+
+**Unauthorized:**
+- "You don't have permission to access this task."
+- "Please log in to manage your tasks."
+
+**Conflict:**
+- "This task is already completed."
+- "That task is already deleted."
+
+### Error Message Format:
+
+```json
+{
+  "error": "Brief error type",
+  "message": "User-friendly explanation",
+  "suggestion": "What to do next",
+  "correlation_id": "UUID for support"
+}
+```
+
+### Key Principles:
+
+1. **Be Specific**: Tell users exactly what went wrong
+2. **Be Helpful**: Suggest next steps or alternatives
+3. **Be Human**: Use natural language, not technical jargon
+4. **Be Honest**: Admit when services are down
+5. **Be Brief**: Keep messages under 2 sentences when possible
+
+Examples:
+
+✓ Good: "I couldn't understand the date. Try 'tomorrow at 5pm' format."
+✗ Bad: "DateTime parsing error: Invalid format string at line 45"
+
+✓ Good: "Task saved but reminder failed. Please set it manually."
+✗ Bad: "Transaction committed but Kafka publish failed with error code 500"
+
+✓ Good: "I'm only 60% sure you want to create a task. Is that right?"
+✗ Bad: "Confidence score below threshold. Clarification required."

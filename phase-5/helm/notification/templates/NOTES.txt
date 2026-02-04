@@ -1,0 +1,32 @@
+Thank you for installing {{ .Chart.Name }}!
+
+Your notification service is deployed and ready to send reminders.
+
+1. Get the notification service URL:
+   export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "notification.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+   export CONTAINER_PORT=$(kubectl get pod --namespace {{ .Release.Namespace }} $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+   echo "Visit http://127.0.0.1:8080 to use your notification service"
+   kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:$CONTAINER_PORT
+
+2. Check notification service logs:
+   kubectl logs --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "notification.name" }},app.kubernetes.io/instance={{ .Release.Name }}" --tail=-1 --follow
+
+3. Verify Dapr sidecar is running:
+   kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "notification.name }}" -o jsonpath="{.items[0].spec.containers[*].name}"
+
+4. Test health endpoint:
+   kubectl exec --namespace {{ .Release.Namespace }} -it $POD_NAME -- curl -f http://localhost:4000/health
+
+5. Check Dapr subscription to "reminders" topic:
+   kubectl get subscriptions --namespace {{ .Release.Namespace }}
+
+6. View reminder events in Kafka (requires Kafka tools):
+   kubectl exec -it my-cluster-kafka-0 --namespace kafka -- bin/kafka-console-consumer.sh \
+     --bootstrap-server localhost:9092 \
+     --topic reminders \
+     --from-beginning
+
+To update email credentials, edit the secret:
+  kubectl edit secret {{ include "notification.fullname" . }}-secret --namespace {{ .Release.Namespace }}
+
+For more information, visit: https://github.com/your-org/todo-app
