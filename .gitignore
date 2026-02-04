@@ -268,3 +268,5 @@ package-lock.json
 yarn.lock
 pnpm-lock.yaml
 nul
+.hf_token
+.hf_token_new
