@@ -56,9 +56,11 @@ Content-Type: application/json
 ```
 
 ### Environment Variables (Required Secrets)
-- `DATABASE_URL` - PostgreSQL connection string
-- `QWEN_API_KEY` - Qwen AI API key
-- `JWT_SECRET` - JWT signing secret
+- `DATABASE_URL` - PostgreSQL connection string (Neon Tech)
+- `JWT_SECRET` - JWT signing secret (min 32 chars)
+- `DASHSCOPE_API_KEY` - Qwen AI API key from Alibaba Cloud DashScope
+- `FRONTEND_URL` - Frontend URL for CORS (default: http://localhost:3000)
+- `ENVIRONMENT` - Environment mode (development/production)
 
 ### Tech Stack
 - FastAPI (Python web framework)

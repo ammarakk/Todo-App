@@ -59,17 +59,17 @@ COPY --chown=appuser:appuser . .
 # Switch to non-root user
 USER appuser
 
-# Expose application port
-EXPOSE 8000
+# Expose application port (HuggingFace Spaces uses port 7860)
+EXPOSE 7860
 
 # Health check for Kubernetes liveness/readiness probes
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f http://localhost:7860/health || exit 1
 
 # Production uvicorn configuration with proper signal handling
 CMD ["uvicorn", "src.main:app", \
      "--host", "0.0.0.0", \
-     "--port", "8000", \
+     "--port", "7860", \
      "--workers", "1", \
      "--log-level", "info", \
      "--no-access-log", \
