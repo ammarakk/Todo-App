@@ -30,6 +30,9 @@ dependencies = [
     "pydantic>=2.5.0",
     "pydantic-settings>=2.1.0",
     "python-dotenv>=1.0.0",
+    "email-validator>=2.3.0",
+    "openai>=2.17.0",
+    "bcrypt>=5.0.0",
 ]
 
 [project.optional-dependencies]
@@ -139,18 +142,7 @@ exclude_lines = [
 ]
 
 [project.scripts]
-# Development commands
-dev = "uvicorn src.main:app --reload --port 8000 --host 0.0.0.0"
-test = "pytest"
-test-cov = "pytest --cov=src --cov-report=html"
+todo-app = "src.main:app"
 
-# Database migration commands
-db-upgrade = "alembic upgrade head"
-db-downgrade = "alembic downgrade -1"
-db-migration = "alembic revision --autogenerate -m"
-
-# Code quality commands
-format = "black ."
-lint = "ruff check ."
-lint-fix = "ruff check . --fix"
-type-check = "mypy ."
+# These scripts are managed by uv - use `uv run` with the command
+# Example: uv run uvicorn src.main:app --reload --port 8000

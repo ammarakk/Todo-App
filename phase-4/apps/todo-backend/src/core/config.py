@@ -4,17 +4,24 @@ Application configuration using pydantic-settings.
 Loads environment variables from .env file and provides type-safe access.
 """
 from functools import lru_cache
+from pathlib import Path
 from typing import Optional
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+# Find .env file in backend directory or parent directories
+_env_path = Path(__file__).parent.parent.parent / '.env'
+if not _env_path.exists():
+    _env_path = Path('.env')
+
+
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     model_config = SettingsConfigDict(
-        env_file='.env',
+        env_file=str(_env_path),
         env_file_encoding='utf-8',
         case_sensitive=False,
         extra='ignore',

@@ -6,27 +6,37 @@ Provides password hashing with bcrypt and JWT token creation/verification.
 from datetime import datetime, timedelta
 from typing import Optional
 
+import bcrypt
+import hashlib
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from src.core.config import settings
-
-# Password hashing context with bcrypt
-pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     Verify a plain password against a hashed password.
-
-    Args:
-        plain_password: Plain text password to verify
-        hashed_password: Hashed password to compare against
-
-    Returns:
-        bool: True if passwords match, False otherwise
+    Supports both old direct bcrypt and new SHA256+bcrypt hashes.
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    hashed_bytes = hashed_password.encode('utf-8') if isinstance(hashed_password, str) else hashed_password
+
+    # Try new method (SHA256 + bcrypt) first
+    try:
+        password_hash = hashlib.sha256(plain_password.encode('utf-8')).digest()
+        if bcrypt.checkpw(password_hash, hashed_bytes):
+            return True
+    except:
+        pass
+
+    # Try old method (direct bcrypt) for backward compatibility
+    try:
+        password_bytes = plain_password.encode('utf-8')[:72]
+        if bcrypt.checkpw(password_bytes, hashed_bytes):
+            return True
+    except:
+        pass
+
+    return False
 
 
 def get_password_hash(password: str) -> str:
@@ -39,7 +49,12 @@ def get_password_hash(password: str) -> str:
     Returns:
         str: Hashed password
     """
-    return pwd_context.hash(password)
+    # Hash the password with SHA256 first to avoid bcrypt's 72-byte limit
+    # This is a safe and common practice
+    password_hash = hashlib.sha256(password.encode('utf-8')).digest()
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password_hash, salt)
+    return hashed.decode('utf-8')
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:

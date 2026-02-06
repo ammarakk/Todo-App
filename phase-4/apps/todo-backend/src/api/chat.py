@@ -3,17 +3,17 @@
 # Chat API Endpoint - Full implementation with Qwen and MCP tools
 
 import json
-import os
 import re
 import time
 from typing import Optional, List, Dict, Any
 from uuid import UUID
 from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel, Field
-from sqlmodel import Session, create_engine
+from sqlmodel import Session
 from logging import getLogger
 
 from src.middleware.auth import get_current_user_id
+from src.api.deps import get_db
 from src.ai.qwen_client import QwenClient
 from src.ai.prompt_builder import PromptBuilder
 from src.mcp.server import MCPServer
@@ -23,10 +23,6 @@ from src.repositories.todo_repository import ConversationRepository
 
 logger = getLogger(__name__)
 router = APIRouter(prefix="/api/ai-chat", tags=["AI Chat"])  # Changed from /api/chat for dashboard integration
-
-# Database setup
-DATABASE_URL = os.getenv("NEON_DATABASE_URL", "sqlite:///./test.db")
-engine = create_engine(DATABASE_URL)
 
 
 class ChatRequest(BaseModel):
@@ -45,12 +41,6 @@ class ChatResponse(BaseModel):
     reply: str = Field(..., description="AI response in user's language")
     conversation_id: str = Field(..., description="Conversation UUID")
     tool_calls: Optional[List[Dict[str, Any]]] = Field(None, description="MCP tools executed by AI")
-
-
-def get_session():
-    """Get database session"""
-    with Session(engine) as session:
-        yield session
 
 
 def extract_tool_call(ai_response: str) -> Optional[Dict[str, Any]]:
@@ -131,7 +121,7 @@ class AICommandResponse(BaseModel):
 def ai_command(
     request: AICommandRequest,
     user_id: str = Depends(get_current_user_id),
-    session: Session = Depends(get_session)
+    db: Session = Depends(get_db)
 ):
     """
     AI Command Endpoint for Dashboard Integration.
@@ -153,7 +143,7 @@ def ai_command(
     Args:
         request: AI command request with message
         user_id: Extracted from JWT token
-        session: Database session
+        db: Database session
 
     Returns:
         AI command response with action, message, and data
@@ -167,7 +157,7 @@ def ai_command(
         user_uuid = UUID(user_id)
 
         # Initialize repositories and MCP
-        conv_repo = ConversationRepository(session)
+        conv_repo = ConversationRepository(db)
 
         # Handle conversation ID
         if request.conversationId == "new":
@@ -204,15 +194,11 @@ def ai_command(
 
         # Initialize MCP server and tools
         mcp_server = MCPServer()
-        mcp_tools = initialize_mcp_tools(session, user_uuid)
+        mcp_tools = initialize_mcp_tools(db, user_uuid)
         register_mcp_tools_with_server(mcp_server, mcp_tools)
 
         # Build system prompt with tool definitions
-        tool_descriptions = mcp_server.list_tools()
-        system_prompt = PromptBuilder.build_system_prompt(
-            language=language,
-            tools_available=tool_descriptions
-        )
+        system_prompt = PromptBuilder.build_system_prompt(language=language)
 
         # Prepare messages for Qwen
         qwen_messages = [
@@ -349,7 +335,7 @@ def execute_tool_calls(
 def chat(
     request: ChatRequest,
     user_id: str = Depends(get_current_user_id),
-    session: Session = Depends(get_session)
+    db: Session = Depends(get_db)
 ):
     """
     Send message to AI chatbot and receive response.
@@ -367,7 +353,7 @@ def chat(
     Args:
         request: Chat request with user message
         user_id: Extracted from JWT token
-        session: Database session
+        db: Database session
 
     Returns:
         Chat response with AI reply
@@ -377,7 +363,7 @@ def chat(
         logger.info(f"Chat request from user {user_id}: {request.message[:50]}...")
 
         # Initialize repositories and MCP
-        conv_repo = ConversationRepository(session)
+        conv_repo = ConversationRepository(db)
         conversation = conv_repo.get_or_create_conversation(
             user_uuid,
             UUID(request.conversation_id) if request.conversation_id else None
@@ -405,15 +391,11 @@ def chat(
 
         # Initialize MCP server and tools
         mcp_server = MCPServer()
-        mcp_tools = initialize_mcp_tools(session, user_uuid)
+        mcp_tools = initialize_mcp_tools(db, user_uuid)
         register_mcp_tools_with_server(mcp_server, mcp_tools)
 
         # Build system prompt with tool definitions
-        tool_descriptions = mcp_server.list_tools()
-        system_prompt = PromptBuilder.build_system_prompt(
-            language=language,
-            tools_available=tool_descriptions
-        )
+        system_prompt = PromptBuilder.build_system_prompt(language=language)
 
         # Prepare messages for Qwen
         qwen_messages = [

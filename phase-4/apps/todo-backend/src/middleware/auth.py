@@ -3,7 +3,7 @@
 # JWT Verification Middleware - Extracts user_id and rejects invalid tokens
 
 from typing import Optional
-from fastapi import HTTPException, Security, status
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from src.core.config import settings
@@ -14,10 +14,10 @@ JWT_SECRET = settings.jwt_secret
 JWT_ALGORITHM = settings.jwt_algorithm
 
 # Security scheme for FastAPI
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
 
 
-async def verify_jwt(credentials: HTTPAuthorizationCredentials = Security(security)) -> str:
+async def verify_jwt(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> str:
     """
     Verify JWT token and extract user_id.
 
@@ -61,17 +61,17 @@ async def verify_jwt(credentials: HTTPAuthorizationCredentials = Security(securi
         )
 
 
-async def get_current_user_id(credentials: HTTPAuthorizationCredentials = Security(security)) -> str:
+async def get_current_user_id(user_id: str = Depends(verify_jwt)) -> str:
     """
     Dependency injection helper to get current user_id from JWT.
 
     Usage in FastAPI endpoints:
-        user_id = await get_current_user_id(credentials)
+        user_id = await get_current_user_id()
 
     Args:
-        credentials: HTTP Bearer token from Authorization header
+        user_id: Extracted user UUID
 
     Returns:
         user_id: Extracted user UUID
     """
-    return await verify_jwt(credentials)
+    return user_id

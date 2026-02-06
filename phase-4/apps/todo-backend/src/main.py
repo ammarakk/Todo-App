@@ -4,14 +4,20 @@ FastAPI application main entry point.
 Configures the FastAPI app with CORS middleware, routes, and middleware.
 """
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import AsyncGenerator
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from src.core.config import settings
 from src.core.database import DatabaseManager, init_db
+
+# Load environment variables from .env file
+_env_path = Path(__file__).parent.parent / '.env'
+load_dotenv(dotenv_path=_env_path)
 
 
 @asynccontextmanager
@@ -61,11 +67,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 name='Check and send task reminders'
             )
             scheduler.start()
-            print("✅ Reminder scheduler started (runs every hour)")
+            print("[OK] Reminder scheduler started (runs every hour)")
         except Exception as e:
-            print(f"⚠️  Failed to start reminder scheduler: {e}")
+            print(f"[WARN] Failed to start reminder scheduler: {e}")
     else:
-        print("⚠️  Reminder scheduler disabled (Gmail not configured)")
+        print("[WARN] Reminder scheduler disabled (Gmail not configured)")
 
     yield
 

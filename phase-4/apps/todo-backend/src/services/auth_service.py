@@ -115,7 +115,7 @@ def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
     if not user:
         return None
 
-    # Verify password
+    # Verify password (truncation is handled in verify_password function)
     if not verify_password(password, user.password_hash):
         return None
 
