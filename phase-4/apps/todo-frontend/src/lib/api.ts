@@ -268,7 +268,7 @@ export const usersApi = {
  */
 export const aiApi = {
   async chat(message: string, context?: any) {
-    return fetchAPI<any>('/ai-chat', {
+    return fetchAPI<any>('/ai-chat/', {
       method: 'POST',
       body: JSON.stringify({ message }),
     });
