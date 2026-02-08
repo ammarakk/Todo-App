@@ -27,7 +27,11 @@ async function fetchAPI<T>(
   options: RequestInit = {}
 ): Promise<T> {
   // Ensure endpoint starts with /api/
-  const cleanEndpoint = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
+  let cleanEndpoint = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
+  // Add trailing slash to avoid redirects (HuggingFace Spaces requirement)
+  if (!cleanEndpoint.endsWith('/')) {
+    cleanEndpoint += '/';
+  }
   const url = `${API_BASE}${cleanEndpoint}`;
 
   // Get token from localStorage
@@ -45,8 +49,6 @@ async function fetchAPI<T>(
   const response = await fetch(url, {
     ...options,
     headers,
-    // Let browser handle redirects normally with auth headers
-    redirect: 'follow',
   });
 
   const data = await response.json();
@@ -186,7 +188,7 @@ export const usersApi = {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(`${API_BASE}/users/me/avatar`, {
+    const response = await fetch(`${API_BASE}/users/me/avatar/`, {
       method: 'POST',
       headers: {
         ...(token && { 'Authorization': `Bearer ${token}` }),
