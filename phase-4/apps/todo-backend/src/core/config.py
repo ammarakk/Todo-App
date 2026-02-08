@@ -69,7 +69,7 @@ class Settings(BaseSettings):
     # AI Provider Configuration
     # ========================================
     ai_provider: str = Field(
-        default='qwen',
+        default='gemini',
         description='AI provider: gemini, qwen, or huggingface'
     )
     gemini_api_key: Optional[str] = Field(
