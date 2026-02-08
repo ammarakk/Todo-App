@@ -26,21 +26,33 @@ export function useTodos(params: TodoListParams = {}) {
     setLoading(true);
     setError(null);
     try {
+      console.log('[useTodos] Fetching todos with params:', params);
       const response = await todosApi.list(params);
-      console.log('API Response:', response);
+      console.log('[useTodos] API Response:', response);
 
       // Handle both response formats
       if (Array.isArray(response)) {
+        console.log('[useTodos] Response is array, setting todos directly');
         setTodos(response);
       } else if (response && typeof response === 'object' && 'todos' in response) {
+        console.log('[useTodos] Response has todos property');
         setTodos(response.todos);
       } else {
-        console.warn('Unexpected response format:', response);
+        console.warn('[useTodos] Unexpected response format:', response);
         setTodos([]);
       }
-    } catch (err) {
-      console.error('Fetch todos error:', err);
-      const message = err instanceof ApiError ? err.message : 'Failed to fetch todos';
+    } catch (err: any) {
+      console.error('[useTodos] Fetch error:', err);
+      // Show more detailed error info
+      let message = 'Failed to fetch todos';
+      if (err?.message) {
+        message = err.message;
+      } else if (err?.detail) {
+        message = err.detail;
+      } else if (typeof err === 'string') {
+        message = err;
+      }
+      console.error('[useTodos] Error message to display:', message);
       setError(message);
       setTodos([]); // Set empty array on error to prevent crashes
     } finally {

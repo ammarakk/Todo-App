@@ -41,6 +41,10 @@ async function fetchAPI<T>(
 
   // Get token from localStorage
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  console.log(`[fetchAPI] ${options.method || 'GET'} ${cleanEndpoint}`);
+  console.log(`[fetchAPI] URL: ${url}`);
+  console.log(`[fetchAPI] Has token: ${!!token}`);
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(options.headers as Record<string, string> || {}),
@@ -49,6 +53,7 @@ async function fetchAPI<T>(
   // Add authorization header if token exists
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+    console.log(`[fetchAPI] Token: ${token.substring(0, 20)}...`);
   }
 
   const response = await fetch(url, {
@@ -56,19 +61,23 @@ async function fetchAPI<T>(
     headers,
   });
 
+  console.log(`[fetchAPI] Response status: ${response.status} ${response.statusText}`);
+
   // Parse JSON safely
   let data;
   try {
     const text = await response.text();
     data = text ? JSON.parse(text) : {};
+    console.log(`[fetchAPI] Response data:`, typeof data === 'object' ? JSON.stringify(data).substring(0, 200) : data);
   } catch (error) {
     // If JSON parsing fails, create empty object
-    console.warn('Failed to parse JSON response:', error);
+    console.warn('[fetchAPI] Failed to parse JSON response:', error);
     data = {};
   }
 
   // Handle error responses
   if (!response.ok) {
+    console.error(`[fetchAPI] Error ${response.status}:`, data);
     throw new ApiError(
       data.detail || 'An error occurred',
       response.status,
@@ -142,16 +151,22 @@ export const todosApi = {
       ? '?' + new URLSearchParams(queryParams).toString()
       : '';
 
+    console.log('[todosApi.list] Endpoint:', '/todos' + queryString);
+
     const response = await fetchAPI<any>('/todos' + queryString);
+    console.log('[todosApi.list] Raw response:', response);
 
     // Handle both response formats: { todos: [...] } or [...]
     if (Array.isArray(response)) {
+      console.log('[todosApi.list] Response is array, wrapping in {todos}');
       return { todos: response };
     }
     if (response && typeof response === 'object' && 'todos' in response) {
+      console.log('[todosApi.list] Response has todos property');
       return response;
     }
     // Fallback: return empty array if unexpected format
+    console.warn('[todosApi.list] Unexpected format, returning empty array');
     return { todos: [] };
   },
 
