@@ -95,7 +95,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const token = getToken();
     if (token) {
       try {
-        await api.logout(token);
+        await api.logout();
       } catch {
         // Ignore logout errors
       }
