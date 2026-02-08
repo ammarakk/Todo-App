@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 
 import { AuthProvider } from '@/hooks/use-auth';
 import { SplashWrapper } from '@/components/common/SplashWrapper';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import '@/styles/globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -20,11 +21,13 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${inter.className} bg-gray-950 text-white`}>
-        <SplashWrapper>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </SplashWrapper>
+        <ErrorBoundary>
+          <SplashWrapper>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </SplashWrapper>
+        </ErrorBoundary>
       </body>
     </html>
   );

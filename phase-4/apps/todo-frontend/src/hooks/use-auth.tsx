@@ -43,26 +43,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Initialize auth state from localStorage
   useEffect(() => {
     const initAuth = async () => {
-      if (isAuthenticated()) {
-        const token = getToken();
-        const savedUser = getUser();
+      try {
+        if (isAuthenticated()) {
+          const token = getToken();
+          const savedUser = getUser();
 
-        if (token && savedUser) {
-          setUserState(savedUser);
+          if (token && savedUser) {
+            setUserState(savedUser);
 
-          // Verify token is still valid
-          try {
-            const currentUser = await api.getCurrentUser(token);
-            setUserState(currentUser);
-            setUser(currentUser);
-          } catch {
-            // Token invalid, clear auth
-            clearAuth();
-            setUserState(null);
+            // Verify token is still valid
+            try {
+              const currentUser = await api.getCurrentUser(token);
+              setUserState(currentUser);
+              setUser(currentUser);
+            } catch {
+              // Token invalid, clear auth
+              clearAuth();
+              setUserState(null);
+            }
           }
         }
+      } catch (error) {
+        // Handle any unexpected errors during auth initialization
+        console.error('Auth initialization error:', error);
+        clearAuth();
+        setUserState(null);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     initAuth();

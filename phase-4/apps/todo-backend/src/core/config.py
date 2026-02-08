@@ -66,6 +66,23 @@ class Settings(BaseSettings):
     )
 
     # ========================================
+    # AI Provider Configuration
+    # ========================================
+    ai_provider: str = Field(
+        default='qwen',
+        description='AI provider: gemini, qwen, or huggingface'
+    )
+    gemini_api_key: Optional[str] = Field(
+        default=None, description='Google Gemini API key'
+    )
+    qwen_api_key: Optional[str] = Field(
+        default=None, description='Qwen/Alibaba DashScope API key'
+    )
+    use_qwen_api: bool = Field(
+        default=False, description='Use Qwen API instead of HuggingFace'
+    )
+
+    # ========================================
     # Email Configuration (Gmail SMTP)
     # ========================================
     gmail_email: Optional[str] = Field(

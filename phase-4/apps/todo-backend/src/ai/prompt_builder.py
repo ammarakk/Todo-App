@@ -15,27 +15,33 @@ class PromptBuilder:
 
     # System prompts in English and Urdu
     SYSTEM_PROMPTS = {
-        "english": """You are a helpful task management assistant. You help users create, list, update, and delete tasks through natural conversation.
+        "english": """You are a task management assistant. CRITICAL: You MUST use tools for ALL task operations.
 
-Key capabilities:
-- Create tasks when users ask to add something
-- List all tasks when users ask to see their tasks
-- Delete tasks when users ask to remove a task
-- Mark tasks as completed when users ask
+MANDATORY TOOL USAGE:
+1. When user wants to create a task: You MUST respond with TOOL_CALL: {"tool": "create_task", "parameters": {"title": "task title", "priority": "medium"}}
+2. When user wants to see tasks: You MUST respond with TOOL_CALL: {"tool": "list_tasks", "parameters": {}}
+3. When user wants to complete/delete/update: You MUST respond with the appropriate TOOL_CALL
 
-Response format:
-- Always reply in the same language as the user's message
-- After each action, confirm what you did (e.g., "✅ Task 'Buy milk' has been added.")
-- If you need more information, ask politely
-- Be concise and helpful
+TOOL CALL FORMAT (STRICT - NO EXCEPTIONS):
+TOOL_CALL: {"tool": "tool_name", "parameters": {"key": "value"}}
 
-You have access to these tools:
-- add_task(user_id, title, description): Create a new task
-- list_tasks(user_id, status): List all tasks (optional status filter: pending/completed/all)
-- delete_task(user_id, task_id): Delete a specific task
-- update_task(user_id, task_id, status, title, description): Update task status or content
+Available tools:
+- create_task (params: title, description, priority, due_date, tags)
+- list_tasks (params: {})
+- update_task (params: task_id, title, description, priority, status)
+- delete_task (params: task_id)
+- complete_task (params: task_id)
 
-IMPORTANT: Only use tools when explicitly requested by the user. Never make assumptions.""",
+CRITICAL: NEVER explain what you would do. ALWAYS use the exact TOOL_CALL format.
+DO NOT include markdown, code blocks, or explanations. Just the TOOL_CALL line.
+
+Examples:
+User: "Create a todo to buy groceries"
+Assistant: TOOL_CALL: {"tool": "create_task", "parameters": {"title": "Buy groceries", "priority": "medium"}}
+
+User: "Show me my tasks"
+Assistant: TOOL_CALL: {"tool": "list_tasks", "parameters": {}}
+""",
 
         "urdu": """آپ ایک مددگار ٹاسک MANAGEMENT اسسٹنٹ ہیں۔ آپ صارفین کو قدرتی گفتگو کے ذریعے ٹاسک بنانے، فہرست دکھانے، اپ ڈیٹ کرنے اور حذف کرنے میں مدد کرتے ہیں۔
 
@@ -57,19 +63,50 @@ IMPORTANT: Only use tools when explicitly requested by the user. Never make assu
 - delete_task(user_id, task_id): مخصوص ٹاسک حذف کریں
 - update_task(user_id, task_id, status, title, description): ٹاسک اپ ڈیٹ کریں
 
-اہم: صرف تب tool استعمال کریں جب صارف نے صراحت کی ہو۔ کبھی بھی اندازہ نہ کریں۔"""
+اہم: صرف تب tool استعمال کریں جب صارف نے صراحت کی ہو۔ کبھی بھی اندازہ نہ کریں۔""",
+
+        "roman_urdu": """You are a task management assistant. CRITICAL: You MUST use tools for ALL task operations.
+
+MANDATORY TOOL USAGE:
+1. Jab user task banana chahe: TOOL_CALL: {"tool": "create_task", "parameters": {"title": "task title", "priority": "medium"}}
+2. Jab user tasks dekhna chahe: TOOL_CALL: {"tool": "list_tasks", "parameters": {}}
+3. Jab user task complete/delete/update karna chahe: Appropriate TOOL_CALL use karo
+
+TOOL CALL FORMAT (STRICT - KOI EXCEPTION NAHI):
+TOOL_CALL: {"tool": "tool_name", "parameters": {"key": "value"}}
+
+Available tools:
+- create_task (params: title, description, priority, due_date, tags)
+- list_tasks (params: {})
+- update_task (params: task_id, title, description, priority, status)
+- delete_task (params: task_id)
+- complete_task (params: task_id)
+
+CRITICAL: Kabhi explain mat karo kya karoge. HAMESHA exact TOOL_CALL format use karo.
+Markdown, code blocks ya explanations mat use karo. Sirf TOOL_CALL line likho.
+
+Examples:
+User: "Mujhe ek todo banana hai groceries buy karne ke liye"
+Assistant: TOOL_CALL: {"tool": "create_task", "parameters": {"title": "Buy groceries", "priority": "medium"}}
+
+User: "Meri tasks dikhao"
+Assistant: TOOL_CALL: {"tool": "list_tasks", "parameters": {}}
+
+User: "Ye complete kar do groceries wala task"
+Assistant: TOOL_CALL: {"tool": "complete_task", "parameters": {"task_id": "TASK_ID"}}
+"""
     }
 
     @staticmethod
     def detect_language(text: str) -> str:
         """
-        Detect if text is in Urdu or English.
+        Detect if text is in English, Urdu script, or Roman Urdu.
 
         Args:
             text: User message text
 
         Returns:
-            "urdu" or "english"
+            "english", "urdu", or "roman_urdu"
         """
         # Urdu script detection (Unicode range for Urdu)
         urdu_pattern = re.compile(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]')
@@ -80,15 +117,19 @@ IMPORTANT: Only use tools when explicitly requested by the user. Never make assu
 
         # Roman Urdu detection (common Urdu words written in Latin script)
         roman_urdu_keywords = [
-            'task', 'karo', 'add', 'karo', 'dikhao', 'tasks', 'mera', 'meri',
-            'kuch', 'hai', 'ho', 'ga', 'ge', 'se', 'ka', 'ki', 'ke', 'ko'
+            'karo', 'krna', 'daina', 'bana', 'dikhana', 'dikhao',
+            'mera', 'meri', 'mere', 'kuch', 'hai', 'ho', 'hoga', 'hogi',
+            'se', 'ka', 'ki', 'ke', 'ko', 'mein', 'main', 'ap', 'aap',
+            'kya', 'kis', 'kon', 'sa', 'hi', 'bhi', 'liye', 'waje',
+            'jald', 'turant', 'plz', 'please', 'shukriya', 'thanks'
         ]
 
         text_lower = text.lower()
-        if any(keyword in text_lower for keyword in roman_urdu_keywords):
-            # Check if majority of text looks like Roman Urdu
-            # This is a simple heuristic - can be improved with ML
-            return "urdu"
+        # Check if multiple Roman Urdu words are present
+        roman_urdu_count = sum(1 for word in roman_urdu_keywords if word in text_lower)
+
+        if roman_urdu_count >= 2:
+            return "roman_urdu"
 
         return "english"
 
@@ -98,15 +139,15 @@ IMPORTANT: Only use tools when explicitly requested by the user. Never make assu
         Get system prompt for specified language.
 
         Args:
-            language: "english" or "urdu"
+            language: "english", "urdu", or "roman_urdu"
 
         Returns:
             System prompt string
         """
-        return PromptBuilder.SYSTEM_PROMPTS.get(
-            language.lower(),
-            PromptBuilder.SYSTEM_PROMPTS["english"]  # Fallback to English
-        )
+        language = language.lower()
+        if language not in ["english", "urdu", "roman_urdu"]:
+            language = "english"  # Fallback to English
+        return PromptBuilder.SYSTEM_PROMPTS.get(language)
 
     @staticmethod
     def build_conversation_history(messages: list) -> list:
@@ -144,20 +185,20 @@ IMPORTANT: Only use tools when explicitly requested by the user. Never make assu
     @staticmethod
     def build_tools_definition() -> str:
         """
-        Build tool definitions for Qwen.
+        Build tool definitions for AI.
 
         Returns:
             String describing available tools
         """
         return """
-Available Tools:
-1. add_task(user_id, title, description) - Create a new task
-2. list_tasks(user_id, status) - List all tasks (status: pending/completed/all)
-3. delete_task(user_id, task_id) - Delete a specific task
-4. update_task(user_id, task_id, status, title, description) - Update task
+Available MCP Tools:
+1. create_task(title, description, priority, due_date, tags) - Create a new task
+2. list_tasks(status, priority) - List all tasks
+3. update_task(task_id, title, description, priority, status, due_date, tags) - Update a task
+4. delete_task(task_id) - Delete a task
+5. complete_task(task_id) - Mark a task as completed
 
 Tool Call Format:
-When you need to use a tool, respond in this exact format:
-TOOL: tool_name
-PARAMETERS: {"param1": "value1", "param2": "value2"}
+When you need to use a tool, respond with this exact format:
+TOOL_CALL: {"tool": "tool_name", "parameters": {"param1": "value1"}}
 """

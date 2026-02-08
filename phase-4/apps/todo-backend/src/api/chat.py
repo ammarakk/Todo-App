@@ -15,10 +15,12 @@ from logging import getLogger
 from src.middleware.auth import get_current_user_id
 from src.api.deps import get_db
 from src.ai.qwen_client import QwenClient
+from src.ai.gemini_client import GeminiClient
 from src.ai.prompt_builder import PromptBuilder
 from src.mcp.server import MCPServer
 from src.mcp.registry import initialize_mcp_tools, register_mcp_tools_with_server
 from src.repositories.todo_repository import ConversationRepository
+from src.core.config import settings
 
 
 logger = getLogger(__name__)
@@ -95,6 +97,29 @@ def sanitize_input(message: str) -> str:
     message = ' '.join(message.split())
 
     return message.strip()
+
+
+def get_ai_client():
+    """
+    Factory function to get the appropriate AI client based on settings.
+
+    Returns:
+        AI client instance (QwenClient or GeminiClient)
+
+    Raises:
+        ValueError: If the AI provider is not supported
+    """
+    provider = settings.ai_provider.lower()
+
+    if provider == 'gemini':
+        logger.info("Using Gemini AI client")
+        return GeminiClient()
+    elif provider == 'qwen':
+        logger.info("Using Qwen AI client")
+        return QwenClient()
+    else:
+        logger.warning(f"Unknown AI provider '{provider}', defaulting to Qwen")
+        return QwenClient()
 
 
 # T005: AI Command Request Schema for Dashboard Integration
@@ -189,8 +214,8 @@ def ai_command(
             for msg in history
         ]
 
-        # Initialize Qwen client
-        qwen_client = QwenClient()
+        # Initialize AI client (Qwen or Gemini based on settings)
+        ai_client = get_ai_client()
 
         # Initialize MCP server and tools
         mcp_server = MCPServer()
@@ -207,7 +232,7 @@ def ai_command(
         ]
 
         # Get AI response
-        ai_response = qwen_client.generate(qwen_messages)
+        ai_response = ai_client.generate(qwen_messages)
 
         # Check if AI wants to call a tool
         tool_call = extract_tool_call(ai_response)
@@ -249,7 +274,7 @@ def ai_command(
                 {"role": "user", "content": f"Tool executed successfully. Here is the result:\n{tool_result_text}\n\nPlease format this for the user in {language}."}
             ]
 
-            final_response = qwen_client.generate(followup_messages)
+            final_response = ai_client.generate(followup_messages)
         else:
             # No tool call, just conversation
             final_response = ai_response
@@ -386,8 +411,8 @@ def chat(
             for msg in history
         ]
 
-        # Initialize Qwen client
-        qwen_client = QwenClient()
+        # Initialize AI client (Qwen or Gemini based on settings)
+        ai_client = get_ai_client()
 
         # Initialize MCP server and tools
         mcp_server = MCPServer()
@@ -404,7 +429,7 @@ def chat(
         ]
 
         # Get AI response
-        ai_response = qwen_client.generate(qwen_messages)
+        ai_response = ai_client.generate(qwen_messages)
 
         # Check if AI wants to call a tool
         tool_call = extract_tool_call(ai_response)
@@ -427,7 +452,7 @@ def chat(
                 {"role": "user", "content": f"Tool executed successfully. Here is the result:\n{tool_result_text}\n\nPlease format this for the user in {language}."}
             ]
 
-            final_response = qwen_client.generate(followup_messages)
+            final_response = ai_client.generate(followup_messages)
 
         # Save assistant response
         conv_repo.add_message(
