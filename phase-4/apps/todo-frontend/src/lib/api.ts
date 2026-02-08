@@ -36,7 +36,9 @@ async function fetchAPI<T>(
   // - Auth endpoints (/api/auth/*) should NOT have trailing slashes
   // - Other endpoints (/api/todos, /api/users/*) SHOULD have trailing slashes
   const isAuthEndpoint = cleanEndpoint.startsWith('/api/auth/');
-  if (!isAuthEndpoint && !cleanEndpoint.endsWith('/')) {
+
+  // Add trailing slash for non-auth endpoints, but NOT if there's a querystring
+  if (!isAuthEndpoint && !cleanEndpoint.endsWith('/') && !cleanEndpoint.includes('?')) {
     cleanEndpoint += '/';
   }
 
