@@ -27,10 +27,22 @@ export function useTodos(params: TodoListParams = {}) {
     setError(null);
     try {
       const response = await todosApi.list(params);
-      setTodos(response.todos);
+      console.log('API Response:', response);
+
+      // Handle both response formats
+      if (Array.isArray(response)) {
+        setTodos(response);
+      } else if (response && typeof response === 'object' && 'todos' in response) {
+        setTodos(response.todos);
+      } else {
+        console.warn('Unexpected response format:', response);
+        setTodos([]);
+      }
     } catch (err) {
+      console.error('Fetch todos error:', err);
       const message = err instanceof ApiError ? err.message : 'Failed to fetch todos';
       setError(message);
+      setTodos([]); // Set empty array on error to prevent crashes
     } finally {
       setLoading(false);
     }

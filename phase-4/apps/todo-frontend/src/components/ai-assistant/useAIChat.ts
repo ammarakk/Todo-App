@@ -93,7 +93,9 @@ export function useAIChat(options: UseAIChatOptions = {}) {
 
       try {
         // Call AI API
+        console.log('Sending AI command:', content, 'conversationId:', conversationIdRef.current);
         const response = await aiApi.sendCommand(content, conversationIdRef.current);
+        console.log('AI Response:', response);
 
         // Update conversation ID if new
         if (conversationIdRef.current === 'new' && response.data?.conversation_id) {
@@ -107,7 +109,7 @@ export function useAIChat(options: UseAIChatOptions = {}) {
         const assistantMessage: ChatMessage = {
           id: `msg-${Date.now()}-assistant`,
           role: 'assistant',
-          content: response.message,
+          content: response.message || response.reply || 'No response from AI',
           timestamp: new Date().toISOString(),
           actionType: response.action as any,
           taskData: response.data,
@@ -123,6 +125,7 @@ export function useAIChat(options: UseAIChatOptions = {}) {
         // Return response for caller to handle
         return response;
       } catch (err) {
+        console.error('AI chat error:', err);
         const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
         setError(errorMessage);
 
