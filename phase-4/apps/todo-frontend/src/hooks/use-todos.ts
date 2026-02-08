@@ -56,7 +56,15 @@ export function useTodos(params: TodoListParams = {}) {
         return;
       }
 
-      // Show more detailed error info
+      // Check if it's a TypeError (network/CSP error)
+      if (err instanceof TypeError) {
+        console.error('[useTodos] Network/CSP error, not showing error to user');
+        setError(null); // Don't show error for network issues
+        setTodos([]);
+        return;
+      }
+
+      // Show more detailed error info for other errors
       let message = 'Failed to fetch todos';
       if (err?.message) {
         message = err.message;

@@ -3,7 +3,10 @@
  * Direct calls to HuggingFace backend with proper CORS handling
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://ammaraak-todo-api.hf.space';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'https://ammaraak-todo-backend-new.hf.space';
+
+// Force HTTPS
+const SECURE_API_BASE = API_BASE.replace('http://', 'https://');
 
 /**
  * API error class
@@ -37,7 +40,7 @@ async function fetchAPI<T>(
     cleanEndpoint += '/';
   }
 
-  const url = `${API_BASE}${cleanEndpoint}`;
+  const url = `${SECURE_API_BASE}${cleanEndpoint}`;
 
   // Get token from localStorage
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
