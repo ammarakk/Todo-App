@@ -19,6 +19,9 @@ const priorityColors = {
 };
 
 export function TodoList({ todos, loading, onToggleComplete, onDelete }: TodoListProps) {
+  // Defensive: ensure todos is always an array
+  const todosArray = Array.isArray(todos) ? todos : [];
+
   if (loading) {
     return (
       <div className="mt-8 flex justify-center">
@@ -27,7 +30,7 @@ export function TodoList({ todos, loading, onToggleComplete, onDelete }: TodoLis
     );
   }
 
-  if (todos.length === 0) {
+  if (todosArray.length === 0) {
     return (
       <div className="mt-8 text-center py-12">
         <div className="text-6xl mb-4">📝</div>
@@ -44,7 +47,7 @@ export function TodoList({ todos, loading, onToggleComplete, onDelete }: TodoLis
   return (
     <div className="mt-8 space-y-4">
       <AnimatePresence>
-        {todos.map((todo) => (
+        {todosArray.map((todo) => (
           <motion.div
             key={todo.id}
             initial={{ opacity: 0, x: -20 }}

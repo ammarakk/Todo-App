@@ -7,9 +7,12 @@ import { useTodos } from '@/hooks/use-todos';
 export function TodoStats() {
   const { todos } = useTodos();
 
-  const total = todos.length;
-  const completed = todos.filter((t) => t.status === 'completed').length;
-  const pending = todos.filter((t) => t.status === 'pending').length;
+  // Defensive: ensure todos is always an array
+  const todosArray = Array.isArray(todos) ? todos : [];
+
+  const total = todosArray.length;
+  const completed = todosArray.filter((t) => t.status === 'completed').length;
+  const pending = todosArray.filter((t) => t.status === 'pending').length;
 
   const stats = [
     {

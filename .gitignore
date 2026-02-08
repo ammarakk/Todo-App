@@ -270,3 +270,7 @@ pnpm-lock.yaml
 nul
 .hf_token
 .hf_token_new
+deploy-all.*
+deploy.py
+test_token.txt
+phase-4/set_hf_secrets.sh

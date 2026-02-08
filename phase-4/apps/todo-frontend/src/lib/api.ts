@@ -56,7 +56,16 @@ async function fetchAPI<T>(
     headers,
   });
 
-  const data = await response.json();
+  // Parse JSON safely
+  let data;
+  try {
+    const text = await response.text();
+    data = text ? JSON.parse(text) : {};
+  } catch (error) {
+    // If JSON parsing fails, create empty object
+    console.warn('Failed to parse JSON response:', error);
+    data = {};
+  }
 
   // Handle error responses
   if (!response.ok) {
@@ -133,7 +142,17 @@ export const todosApi = {
       ? '?' + new URLSearchParams(queryParams).toString()
       : '';
 
-    return fetchAPI<{ todos: any[] }>('/todos' + queryString);
+    const response = await fetchAPI<any>('/todos' + queryString);
+
+    // Handle both response formats: { todos: [...] } or [...]
+    if (Array.isArray(response)) {
+      return { todos: response };
+    }
+    if (response && typeof response === 'object' && 'todos' in response) {
+      return response;
+    }
+    // Fallback: return empty array if unexpected format
+    return { todos: [] };
   },
 
   async get(id: string) {
