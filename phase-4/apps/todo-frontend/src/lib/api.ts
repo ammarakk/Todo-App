@@ -34,16 +34,25 @@ async function fetchAPI<T>(
 
   // HuggingFace Spaces URL handling:
   // - Auth endpoints (/api/auth/*): NO trailing slash
-  // - AI endpoints (/api/ai-chat/*): NO trailing slash (causes HTTP redirect)
-  // - AI endpoints (/api/ai/*): NO trailing slash (causes HTTP redirect)
-  // - Other endpoints (/api/todos/, /api/users/*): SHOULD have trailing slash (but not after querystring)
+  // - AI endpoints (/api/ai-chat/*): NO trailing slash
+  // - AI endpoints (/api/ai/*): NO trailing slash
+  // - Other endpoints: Add trailing slash BEFORE querystring to avoid HTTP redirect
   const isAuthEndpoint = cleanEndpoint.startsWith('/api/auth/');
   const isAIEndpoint = cleanEndpoint.startsWith('/api/ai-') || cleanEndpoint.startsWith('/api/ai/');
   const needsTrailingSlash = !isAuthEndpoint && !isAIEndpoint;
 
-  // Add trailing slash only if needed and there's no querystring
-  if (needsTrailingSlash && !cleanEndpoint.endsWith('/') && !cleanEndpoint.includes('?')) {
-    cleanEndpoint += '/';
+  // Handle trailing slash and querystring correctly
+  if (needsTrailingSlash) {
+    if (cleanEndpoint.includes('?')) {
+      // Has querystring - insert slash BEFORE the querystring
+      const [path, querystring] = cleanEndpoint.split('?');
+      if (!path.endsWith('/')) {
+        cleanEndpoint = `${path}/?${querystring}`;
+      }
+    } else if (!cleanEndpoint.endsWith('/')) {
+      // No querystring - just add trailing slash
+      cleanEndpoint += '/';
+    }
   }
 
   const url = `${SECURE_API_BASE}${cleanEndpoint}`;
