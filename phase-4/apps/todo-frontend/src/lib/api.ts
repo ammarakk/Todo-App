@@ -32,13 +32,17 @@ async function fetchAPI<T>(
   // Ensure endpoint starts with /api/
   let cleanEndpoint = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
 
-  // HuggingFace Spaces has inconsistent trailing slash behavior:
-  // - Auth endpoints (/api/auth/*) should NOT have trailing slashes
-  // - Other endpoints (/api/todos, /api/users/*) SHOULD have trailing slashes
+  // HuggingFace Spaces URL handling:
+  // - Auth endpoints (/api/auth/*): NO trailing slash
+  // - AI endpoints (/api/ai-chat/*): NO trailing slash (causes HTTP redirect)
+  // - AI endpoints (/api/ai/*): NO trailing slash (causes HTTP redirect)
+  // - Other endpoints (/api/todos/, /api/users/*): SHOULD have trailing slash (but not after querystring)
   const isAuthEndpoint = cleanEndpoint.startsWith('/api/auth/');
+  const isAIEndpoint = cleanEndpoint.startsWith('/api/ai-') || cleanEndpoint.startsWith('/api/ai/');
+  const needsTrailingSlash = !isAuthEndpoint && !isAIEndpoint;
 
-  // Add trailing slash for non-auth endpoints, but NOT if there's a querystring
-  if (!isAuthEndpoint && !cleanEndpoint.endsWith('/') && !cleanEndpoint.includes('?')) {
+  // Add trailing slash only if needed and there's no querystring
+  if (needsTrailingSlash && !cleanEndpoint.endsWith('/') && !cleanEndpoint.includes('?')) {
     cleanEndpoint += '/';
   }
 
