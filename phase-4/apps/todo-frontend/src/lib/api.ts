@@ -28,10 +28,15 @@ async function fetchAPI<T>(
 ): Promise<T> {
   // Ensure endpoint starts with /api/
   let cleanEndpoint = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
-  // Add trailing slash to avoid redirects (HuggingFace Spaces requirement)
-  if (!cleanEndpoint.endsWith('/')) {
+
+  // HuggingFace Spaces has inconsistent trailing slash behavior:
+  // - Auth endpoints (/api/auth/*) should NOT have trailing slashes
+  // - Other endpoints (/api/todos, /api/users/*) SHOULD have trailing slashes
+  const isAuthEndpoint = cleanEndpoint.startsWith('/api/auth/');
+  if (!isAuthEndpoint && !cleanEndpoint.endsWith('/')) {
     cleanEndpoint += '/';
   }
+
   const url = `${API_BASE}${cleanEndpoint}`;
 
   // Get token from localStorage
