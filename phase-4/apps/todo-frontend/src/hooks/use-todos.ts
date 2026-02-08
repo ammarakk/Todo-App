@@ -43,6 +43,19 @@ export function useTodos(params: TodoListParams = {}) {
       }
     } catch (err: any) {
       console.error('[useTodos] Fetch error:', err);
+
+      // If 401 Unauthorized, clear auth and redirect to login
+      if (err?.status === 401 || err?.message?.includes('Not authenticated')) {
+        console.error('[useTodos] Authentication failed, clearing token and redirecting');
+        // Clear token and redirect
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+        }
+        return;
+      }
+
       // Show more detailed error info
       let message = 'Failed to fetch todos';
       if (err?.message) {

@@ -51,15 +51,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
           if (token && savedUser) {
             setUserState(savedUser);
 
-            // Verify token is still valid
+            // Verify token is still valid by fetching current user
             try {
               const currentUser = await api.getCurrentUser(token);
               setUserState(currentUser);
               setUser(currentUser);
-            } catch {
-              // Token invalid, clear auth
+              console.log('[Auth] Token validated successfully');
+            } catch (err: any) {
+              // Token invalid, clear auth and redirect
+              console.error('[Auth] Token validation failed:', err);
               clearAuth();
               setUserState(null);
+
+              // If 401 error, redirect to login
+              if (err?.status === 401 || err?.message?.includes('Not authenticated')) {
+                if (typeof window !== 'undefined') {
+                  console.log('[Auth] Redirecting to login due to invalid token');
+                  // Only redirect if not already on login page
+                  if (!window.location.pathname.includes('/login')) {
+                    window.location.href = '/login';
+                  }
+                }
+              }
             }
           }
         }
