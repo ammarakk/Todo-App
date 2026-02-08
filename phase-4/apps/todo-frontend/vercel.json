@@ -5,11 +5,11 @@
   "installCommand": "npm install",
   "regions": ["iad1"],
   "env": {
-    "NEXT_PUBLIC_API_URL": "https://ammaraak-todo-app-backend.hf.space"
+    "NEXT_PUBLIC_API_URL": "https://ammaraak-todo-backend-new.hf.space"
   },
   "build": {
     "env": {
-      "NEXT_PUBLIC_API_URL": "https://ammaraak-todo-app-backend.hf.space"
+      "NEXT_PUBLIC_API_URL": "https://ammaraak-todo-backend-new.hf.space"
     }
   },
   "headers": [
@@ -54,7 +54,7 @@
     },
     {
       "source": "/api/:path*",
-      "destination": "https://ammaraak-todo-app-backend.hf.space/api/:path*"
+      "destination": "https://ammaraak-todo-backend-new.hf.space/api/:path*"
     }
   ]
 }
