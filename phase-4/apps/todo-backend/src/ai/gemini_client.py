@@ -23,7 +23,7 @@ class GeminiClient:
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY environment variable is required")
 
-        self.base_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent"
+        self.base_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
         self.timeout = 30.0
 
     def generate(
