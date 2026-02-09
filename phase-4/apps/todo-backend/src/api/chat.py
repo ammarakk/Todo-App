@@ -104,7 +104,7 @@ def get_ai_client():
     Factory function to get the appropriate AI client based on settings.
 
     Returns:
-        AI client instance (QwenClient or GeminiClient)
+        AI client instance (QwenClient or GeminiClient) or FallbackClient
 
     Raises:
         ValueError: If the AI provider is not supported
@@ -112,14 +112,30 @@ def get_ai_client():
     provider = settings.ai_provider.lower()
 
     if provider == 'gemini':
-        logger.info("Using Gemini AI client")
-        return GeminiClient()
+        try:
+            logger.info("Using Gemini AI client")
+            return GeminiClient()
+        except ValueError as e:
+            logger.warning(f"Gemini client initialization failed: {e}")
+            return FallbackClient()
     elif provider == 'qwen':
-        logger.info("Using Qwen AI client")
-        return QwenClient()
+        try:
+            logger.info("Using Qwen AI client")
+            return QwenClient()
+        except ValueError as e:
+            logger.warning(f"Qwen client initialization failed: {e}")
+            return FallbackClient()
     else:
-        logger.warning(f"Unknown AI provider '{provider}', defaulting to Qwen")
-        return QwenClient()
+        logger.warning(f"Unknown AI provider '{provider}', using fallback")
+        return FallbackClient()
+
+
+class FallbackClient:
+    """Fallback AI client that returns helpful messages when API is not configured"""
+
+    def generate(self, messages: list, temperature: float = 0.7, max_tokens: int = 1024) -> str:
+        """Generate a fallback response"""
+        return "I apologize, but the AI assistant is not configured yet. Please use the manual controls to create and manage your tasks. To enable AI features, the administrator needs to set up the GEMINI_API_KEY secret on HuggingFace."
 
 
 # T005: AI Command Request Schema for Dashboard Integration
