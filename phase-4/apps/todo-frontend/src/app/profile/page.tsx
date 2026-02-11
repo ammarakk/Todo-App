@@ -39,10 +39,17 @@ export default function ProfilePage() {
     try {
       console.log('[Profile Update] Sending request with name:', name.trim());
       const result = await usersApi.updateProfile({ name: name.trim() });
-      console.log('[Profile Update] Success:', result);
+      console.log('[Profile Update] API Success:', result);
       setMessage('Profile updated successfully!');
-      // Refresh user data instead of full page reload
-      await refreshUser();
+
+      // Refresh user data - don't let this fail the whole operation
+      try {
+        await refreshUser();
+        console.log('[Profile Update] User refreshed successfully');
+      } catch (refreshError) {
+        console.warn('[Profile Update] Refresh user failed (non-critical):', refreshError);
+        // Don't show error to user, profile was already updated
+      }
     } catch (error) {
       console.error('[Profile Update] Error:', error);
       setMessage('Failed to update profile. Please try again.');
