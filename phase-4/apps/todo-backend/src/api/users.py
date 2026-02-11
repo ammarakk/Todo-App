@@ -71,7 +71,7 @@ async def get_profile(
     }
 
 
-@router.put(
+@router.patch(
     '/me',
     response_model=dict,
     summary='Update user profile',

@@ -82,7 +82,10 @@ export default function DashboardPage() {
   const handleAIActionExecuted = (action: string, data?: any) => {
     console.log('AI action executed:', action, data);
     // Refetch todos to show changes made by AI
-    refetch();
+    // Small delay to ensure backend operation completes before refetch
+    setTimeout(() => {
+      refetch();
+    }, 500);
   };
 
   return (

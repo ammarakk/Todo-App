@@ -158,6 +158,21 @@ export function useAIChat(options: UseAIChatOptions = {}) {
 
   const openChat = useCallback(() => {
     setIsOpen(true);
+    // Clear previous messages and reset conversation for fresh start
+    setMessages([]);
+    setConversationId('new');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('ai_chat_messages');
+      localStorage.removeItem('ai_chat_conversation_id');
+    }
+    // Add welcome message
+    const welcomeMessage: ChatMessage = {
+      id: `msg-${Date.now()}-assistant`,
+      role: 'assistant',
+      content: 'How can I assist you?',
+      timestamp: new Date().toISOString(),
+    };
+    setMessages([welcomeMessage]);
   }, []);
 
   const closeChat = useCallback(() => {
