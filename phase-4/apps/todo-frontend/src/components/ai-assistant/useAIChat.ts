@@ -156,7 +156,7 @@ export function useAIChat(options: UseAIChatOptions = {}) {
     }
   }, []);
 
-  const openChat = useCallback(() => {
+  const openChat = useCallback(async () => {
     setIsOpen(true);
     // Clear previous messages and reset conversation for fresh start
     setMessages([]);
@@ -165,14 +165,44 @@ export function useAIChat(options: UseAIChatOptions = {}) {
       localStorage.removeItem('ai_chat_messages');
       localStorage.removeItem('ai_chat_conversation_id');
     }
-    // Add welcome message
-    const welcomeMessage: ChatMessage = {
-      id: `msg-${Date.now()}-assistant`,
-      role: 'assistant',
-      content: 'How can I assist you?',
-      timestamp: new Date().toISOString(),
-    };
-    setMessages([welcomeMessage]);
+
+    // Fetch current tasks from backend to give AI fresh context
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      if (token) {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://ammaraak-todo-backend-new.hf.space'}/api/todos/`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+
+        // Format current tasks for AI context
+        const tasks = data.todos || data || [];
+        const pendingTasks = tasks.filter((t: any) => t.status !== 'completed');
+        const completedTasks = tasks.filter((t: any) => t.status === 'completed');
+
+        let contextMessage = 'How can I assist you?';
+        if (tasks.length > 0) {
+          contextMessage = `How can I assist you?\n\n(Current context: You have ${tasks.length} total tasks - ${pendingTasks.length} pending, ${completedTasks.length} completed)`;
+        }
+
+        const welcomeMessage: ChatMessage = {
+          id: `msg-${Date.now()}-assistant`,
+          role: 'assistant',
+          content: contextMessage,
+          timestamp: new Date().toISOString(),
+        };
+        setMessages([welcomeMessage]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch current tasks for chatbot context:', error);
+      const welcomeMessage: ChatMessage = {
+        id: `msg-${Date.now()}-assistant`,
+        role: 'assistant',
+        content: 'How can I assist you?',
+        timestamp: new Date().toISOString(),
+      };
+      setMessages([welcomeMessage]);
+    }
   }, []);
 
   const closeChat = useCallback(() => {
