@@ -245,7 +245,7 @@ export const usersApi = {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(`${API_BASE}/users/me/avatar/`, {
+    const response = await fetch(`${SECURE_API_BASE}/users/me/avatar/`, {
       method: 'POST',
       headers: {
         ...(token && { 'Authorization': `Bearer ${token}` }),
