@@ -37,11 +37,14 @@ export default function ProfilePage() {
     setMessage('');
 
     try {
-      await usersApi.updateProfile({ name: name.trim() });
+      console.log('[Profile Update] Sending request with name:', name.trim());
+      const result = await usersApi.updateProfile({ name: name.trim() });
+      console.log('[Profile Update] Success:', result);
       setMessage('Profile updated successfully!');
       // Refresh user data instead of full page reload
       await refreshUser();
     } catch (error) {
+      console.error('[Profile Update] Error:', error);
       setMessage('Failed to update profile. Please try again.');
     } finally {
       setIsSubmitting(false);
