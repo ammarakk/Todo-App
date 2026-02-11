@@ -34,12 +34,14 @@ async function fetchAPI<T>(
 
   // HuggingFace Spaces URL handling:
   // - Auth endpoints (/api/auth/*): NO trailing slash
+  // - Users endpoints (/api/users/*): NO trailing slash (redirects to HTTP)
   // - AI endpoints (/api/ai-chat/*): NO trailing slash
   // - AI endpoints (/api/ai/*): NO trailing slash
   // - Other endpoints: Add trailing slash BEFORE querystring to avoid HTTP redirect
   const isAuthEndpoint = cleanEndpoint.startsWith('/api/auth/');
+  const isUsersEndpoint = cleanEndpoint.startsWith('/api/users/');
   const isAIEndpoint = cleanEndpoint.startsWith('/api/ai-') || cleanEndpoint.startsWith('/api/ai/');
-  const needsTrailingSlash = !isAuthEndpoint && !isAIEndpoint;
+  const needsTrailingSlash = !isAuthEndpoint && !isUsersEndpoint && !isAIEndpoint;
 
   // Handle trailing slash and querystring correctly
   if (needsTrailingSlash) {
