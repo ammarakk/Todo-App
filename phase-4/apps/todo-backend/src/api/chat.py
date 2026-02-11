@@ -202,7 +202,8 @@ def ai_command(
 
         # Handle conversation ID
         if request.conversationId == "new":
-            conversation = conv_repo.get_or_create_conversation(user_uuid, None)
+            # Always create a FRESH conversation for "new" requests
+            conversation = conv_repo.create_fresh_conversation(user_uuid)
         else:
             try:
                 conversation_uuid = UUID(request.conversationId)

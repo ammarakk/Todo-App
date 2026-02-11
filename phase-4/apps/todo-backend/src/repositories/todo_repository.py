@@ -275,6 +275,36 @@ class ConversationRepository:
         # Create new conversation
         return self.create_conversation(user_id)
 
+    def get_conversation(self, conversation_id: UUID) -> Optional[Conversation]:
+        """
+        Get a specific conversation by ID.
+
+        Args:
+            conversation_id: Conversation ID to fetch
+
+        Returns:
+            Conversation object or None
+        """
+        query = select(Conversation).where(Conversation.id == conversation_id)
+        return self.session.exec(query).first()
+
+    def create_fresh_conversation(self, user: UUID) -> Conversation:
+        """
+        Always create a fresh new conversation (no history).
+        Used when user wants to start a new chat session.
+
+        Args:
+            user: User ID
+
+        Returns:
+            New Conversation object
+        """
+        conversation = Conversation(user_id=user)
+        self.session.add(conversation)
+        self.session.commit()
+        self.session.refresh(conversation)
+        return conversation
+
     def add_message(
         self,
         conversation_id: UUID,
